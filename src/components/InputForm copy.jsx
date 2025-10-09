@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 
-export default function InputForm({ entries, setEntries, siteData }) {
+export default function InputForm({ entries, setEntries, siteData, author }) {
   const handleFieldChange = (key, newField) => {
     setEntries((prev) =>
       prev.map((e) => (e.key === key ? { ...e, field: newField } : e))
@@ -27,30 +27,40 @@ export default function InputForm({ entries, setEntries, siteData }) {
     });
   };
 
-  const removeEntry = (key) => setEntries((prev) => prev.filter((e) => e.key !== key));
+  const addEntry = () => {
+    setEntries((prev) => [
+      ...prev,
+      { key: Date.now(), field: "항목", value: "" },
+    ]);
+  };
 
-  const smallButton = {
-    background: "#ddd",
+  const removeEntry = (key) => {
+    setEntries((prev) => prev.filter((e) => e.key !== key));
+  };
+
+  const buttonStyle = {
+    background: "linear-gradient(145deg, #f5f5f5, #dcdcdc)",
+    color: "#333",
     border: "1px solid #ccc",
-    borderRadius: "6px",
-    padding: "4px 6px",
-    fontSize: "12px",
+    borderRadius: "25px",
+    padding: "8px 16px",
     cursor: "pointer",
-    marginLeft: "4px",
+    fontSize: "16px",
+    boxShadow: "1px 1px 3px rgba(0,0,0,0.2)",
+    margin: "0 4px",
   };
 
   const inputStyle = {
     flex: 1,
     padding: "8px",
-    marginBottom: "4px",
+    marginRight: "4px",
     borderRadius: "6px",
     border: "1px solid #ccc",
     fontSize: "16px",
-    color: "#000",
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
       {entries.map((entry, idx) => (
         <div
           key={entry.key}
@@ -59,8 +69,8 @@ export default function InputForm({ entries, setEntries, siteData }) {
             flexWrap: "wrap",
             alignItems: "center",
             border: "1px solid #ccc",
-            borderRadius: 6,
-            padding: 6,
+            borderRadius: 8,
+            padding: 8,
             backgroundColor: "#fff",
           }}
         >
@@ -69,7 +79,6 @@ export default function InputForm({ entries, setEntries, siteData }) {
             value={entry.field}
             onChange={(e) => handleFieldChange(entry.key, e.target.value)}
           />
-
           {entry.field === "현장명" ? (
             <select
               style={inputStyle}
@@ -90,20 +99,14 @@ export default function InputForm({ entries, setEntries, siteData }) {
               onChange={(e) => handleValueChange(entry.key, e.target.value)}
             >
               <option value="">선택</option>
-              {siteData.map((d) => d["공종명"]).filter(Boolean).map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          ) : entry.field === "공종코드" ? (
-            <select
-              style={inputStyle}
-              value={entry.value}
-              onChange={(e) => handleValueChange(entry.key, e.target.value)}
-            >
-              <option value="">선택</option>
-              {siteData.map((d) => d["공종코드"]).filter(Boolean).map((code) => (
-                <option key={code} value={code}>{code}</option>
-              ))}
+              {siteData
+                .filter((d) => d["현장명"] === entries.find((e) => e.field === "현장명")?.value)
+                .map((d) => d["공종명"])
+                .map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
             </select>
           ) : entry.field === "일자" ? (
             <input
@@ -121,13 +124,25 @@ export default function InputForm({ entries, setEntries, siteData }) {
             />
           )}
 
-          <div style={{ display: "flex", marginLeft: "auto", marginTop: 4 }}>
-            <button style={smallButton} onClick={() => moveEntry(idx, -1)}>▲</button>
-            <button style={smallButton} onClick={() => moveEntry(idx, 1)}>▼</button>
-            {idx >= 3 && <button style={smallButton} onClick={() => removeEntry(entry.key)}>삭제</button>}
+          <div style={{ display: "flex", flexWrap: "wrap", marginTop: 4 }}>
+            <button style={buttonStyle} onClick={() => moveEntry(idx, -1)}>
+              ▲
+            </button>
+            <button style={buttonStyle} onClick={() => moveEntry(idx, 1)}>
+              ▼
+            </button>
+            {idx >= 3 && (
+              <button style={buttonStyle} onClick={() => removeEntry(entry.key)}>
+                삭제
+              </button>
+            )}
           </div>
         </div>
       ))}
+
+      <button style={buttonStyle} onClick={addEntry}>
+        항목 추가
+      </button>
     </div>
   );
 }

@@ -6,153 +6,160 @@ import { uploadPhoto } from "@/lib/googleDrive";
 
 export default function ImageEditor({ author }) {
   const [siteData, setSiteData] = useState([]);
-  const [entries, setEntries] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lastEntries");
-      return saved
-        ? JSON.parse(saved)
-        : [
-            { key: 1, field: "현장명", value: "" },
-            { key: 2, field: "공종명", value: "" },
-            { key: 3, field: "일자", value: "" },
-          ];
-    }
-    return [
-      { key: 1, field: "현장명", value: "" },
-      { key: 2, field: "공종명", value: "" },
-      { key: 3, field: "일자", value: "" },
-    ];
-  });
+  const [entries, setEntries] = useState([
+    { key: 1, field: "현장명", value: "" },
+    { key: 2, field: "일자", value: "" },
 
+  ]);
+  const [formList, setFormList] = useState([]);
+  const [selectedForm, setSelectedForm] = useState("");
   const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const canvasRef = useRef(null);
 
-  // 🔹 시트 데이터 불러오기
-  useEffect(() => {
-    fetchSheetData().then((data) => setSiteData(data));
-  }, []);
+  // 시트 불러오기
+  useEffect(() => { fetchSheetData("현장목록").then(setSiteData); }, []);
+  useEffect(() => { fetchSheetData("입력양식").then(data => setFormList(data.map(f=>f["양식명"]))); }, []);
 
-  // 🔹 최근 입력 저장
-  useEffect(() => {
-    localStorage.setItem("lastEntries", JSON.stringify(entries));
-  }, [entries]);
+  const handleImageChange = (e) => { if(e.target.files[0]) setImageFile(e.target.files[0]); };
 
-  const handleImageChange = (e) => {
-    if (e.target.files[0]) setImageFile(e.target.files[0]);
+  const handleLoadForm = async () => {
+    if (!selectedForm) return;
+    const allForms = await fetchSheetData("입력양식");
+    const form = allForms.find(f => f["양식명"] === selectedForm);
+    if (!form) return;
+    const fields = form["항목명"].split(",");
+    const newEntries = [...entries];
+    fields.forEach(field => {
+      if (!newEntries.some(e => e.field === field)) newEntries.push({ key: Date.now()+Math.random(), field, value: "" });
+    });
+    setEntries(newEntries);
   };
 
-  // 🔹 캔버스 그리기
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const allRequiredFilled = () => entries.every(e => e.value && e.value.trim()!=="");
 
-    if (!imageFile) return;
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+ useEffect(() => {
+  if (!canvasRef.current || !imageFile) return;
 
-      // 테이블
-      const tableWidth = canvas.width / 3;
-      const tableHeight = canvas.height / 3;
-      const tableX = 0;
-      const tableY = canvas.height - tableHeight;
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(tableX, tableY, tableWidth, tableHeight);
-      ctx.strokeStyle = "#888";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(tableX, tableY, tableWidth, tableHeight);
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      const rowHeight = tableHeight / entries.length;
+    // 🔹 표 위치 및 크기 (이미지 전체 9등분, 왼쪽 아래 한 칸)
+    const padding = 10; // 이미지 가장자리에서 여백
+    const tableWidth = canvas.width / 3 - padding * 2;
+    const tableHeight = canvas.height / 3 - padding * 2;
+    const tableX = padding;
+    const tableY = canvas.height - canvas.height / 3 + padding;
 
-      // 행 그리기
-      entries.forEach((entry, i) => {
-        const y = tableY + i * rowHeight;
+    // 🔹 표 배경
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(tableX, tableY, tableWidth, tableHeight);
 
-        // 가로선
-        ctx.beginPath();
-        ctx.moveTo(tableX, y);
-        ctx.lineTo(tableX + tableWidth, y);
-        ctx.stroke();
+    // 🔹 표 테두리
+    ctx.strokeStyle = "#888";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(tableX, tableY, tableWidth, tableHeight);
 
-        // 세로선 (2열)
-        ctx.beginPath();
-        ctx.moveTo(tableX + tableWidth * 0.3, y);
-        ctx.lineTo(tableX + tableWidth * 0.3, y + rowHeight);
-        ctx.stroke();
+    const rowHeight = tableHeight / entries.length;
+    const col1Width = tableWidth * 0.4; // 1열 폭 넓힘
+    const col2Width = tableWidth - col1Width;
 
-        // 텍스트
-        ctx.fillStyle = "#000";
-        ctx.font = "16px 돋움";
-        ctx.fillText(entry.field, tableX + 5, y + rowHeight * 0.7);
-        ctx.fillText(entry.value, tableX + tableWidth * 0.3 + 5, y + rowHeight * 0.7);
-      });
+    entries.forEach((entry, i) => {
+      const y = tableY + i * rowHeight;
 
-      // 마지막 가로선
+      // 🔹 가로선
       ctx.beginPath();
-      ctx.moveTo(tableX, tableY + tableHeight);
-      ctx.lineTo(tableX + tableWidth, tableY + tableHeight);
+      ctx.moveTo(tableX, y);
+      ctx.lineTo(tableX + tableWidth, y);
       ctx.stroke();
-    };
-    img.src = URL.createObjectURL(imageFile);
-  }, [entries, imageFile]);
 
-  // 🔹 업로드 처리
+      // 🔹 세로선
+      ctx.beginPath();
+      ctx.moveTo(tableX + col1Width, y);
+      ctx.lineTo(tableX + col1Width, y + rowHeight);
+      ctx.stroke();
+
+      // 🔹 글자
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 12px 돋움";
+      ctx.textBaseline = "middle";
+      ctx.fillText(entry.field, tableX + 4, y + rowHeight / 2); // 글자 좌측 여백
+      ctx.fillText(entry.value, tableX + col1Width + 4, y + rowHeight / 2);
+    });
+
+    // 마지막 가로선
+    ctx.beginPath();
+    ctx.moveTo(tableX, tableY + tableHeight);
+    ctx.lineTo(tableX + tableWidth, tableY + tableHeight);
+    ctx.stroke();
+  };
+
+  img.src = URL.createObjectURL(imageFile);
+}, [entries, imageFile]);
+
   const handleUpload = async () => {
-    if (!canvasRef.current) return;
-
+    if(!allRequiredFilled()){ alert("모든 입력 필드는 필수입니다."); return; }
+    if(!canvasRef.current){ alert("캔버스가 없습니다."); return; }
+    setUploading(true);
     const canvas = canvasRef.current;
     const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
-
-    // filename: value가 있는 항목만 순서대로 연결
-    const validValues = entries.map((e) => e.value).filter((v) => v && v.trim() !== "");
-    const filename = validValues.join("_") + ".jpg";
-
-    const date = entries.find((e) => e.field === "일자")?.value || "";
-    const siteName = entries.find((e) => e.field === "현장명")?.value || "";
-
-    const res = await uploadPhoto(base64, filename, date, siteName, author);
-    alert(res.success ? `✅ 업로드 성공!\n${res.fileUrl}` : `❌ 업로드 실패: ${res.error}`);
+    const filename = entries.map(e=>e.value).filter(Boolean).join("_")+".jpg";
+    const date = entries.find(e=>e.field==="일자")?.value||"";
+    const siteName = entries.find(e=>e.field==="현장명")?.value||"";
+    try{
+      const res = await uploadPhoto(base64, filename, date, siteName, author);
+      if(res.success){
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/jpeg");
+        link.download = filename;
+        link.click();
+        alert("업로드 성공! 모바일에 저장되었습니다.");
+      } else alert("업로드 실패: "+res.error);
+    } catch(err){ alert("업로드 오류: "+err.message); }
+    setUploading(false);
   };
 
-  // 🔹 버튼 스타일
   const buttonStyle = {
     background: "linear-gradient(145deg, #f5f5f5, #dcdcdc)",
-    color: "#333",
-    border: "1px solid #ccc",
-    borderRadius: "25px",
-    padding: "10px 20px",
-    cursor: "pointer",
-    fontSize: "16px",
-    boxShadow: "2px 2px 5px rgba(0,0,0,0.2)",
-    marginRight: 10,
+    color:"#333", border:"1px solid #ccc", borderRadius:"25px",
+    padding:"12px 20px", cursor:"pointer", fontSize:16,
+    boxShadow:"2px 2px 5px rgba(0,0,0,0.2)", marginRight:10, marginBottom:10
   };
 
+  const smallButtonStyle = { ...buttonStyle, padding:"6px 12px", fontSize:12, borderRadius:6 };
+
   return (
-    <div style={{ padding: 20, fontFamily: "돋움", backgroundColor: "#f0f0f0" }}>
+    <div style={{padding:20,fontFamily:"돋움",backgroundColor:"#f0f0f0"}}>
       <h2>현장사진 편집 ({author})</h2>
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleImageChange}
-        style={{ ...buttonStyle, display: "block", marginBottom: 10 }}
-      />
+      {/* 사진선택 */}
+      <input type="file" accept="image/*" onChange={handleImageChange} style={{...buttonStyle, display:"block"}}/>
 
-      <InputForm entries={entries} setEntries={setEntries} siteData={siteData} author={author} />
+      {/* 양식 불러오기 + 항목 추가 */}
+      <div style={{display:"flex",alignItems:"center", marginBottom:10}}>
+        <select value={selectedForm} onChange={e=>setSelectedForm(e.target.value)}
+          style={{flex:1,padding:8,fontSize:16,borderRadius:6,border:"1px solid #ccc", marginRight:4}}>
+          <option value="">양식 선택</option>
+          {formList.map(f=><option key={f} value={f}>{f}</option>)}
+        </select>
+        <button onClick={handleLoadForm} style={smallButtonStyle}>불러오기</button>
+      </div>
 
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={500}
-        style={{ border: "1px solid #ccc", marginBottom: 10 }}
-      />
+      {/* 입력폼 */}
+      <InputForm entries={entries} setEntries={setEntries} siteData={siteData}/>
 
-      <button onClick={handleUpload} style={buttonStyle}>
-        업로드
+      {/* 업로드 버튼 */}
+      <button onClick={handleUpload} disabled={uploading} style={{...buttonStyle, opacity:uploading?0.5:1}}>
+        {uploading ? "전송 중..." : "업로드"}
       </button>
+
+      {/* 미리보기 */}
+      <canvas ref={canvasRef} width={600} height={500} style={{border:"1px solid #ccc",marginTop:10, width:"100%"}}/>
     </div>
   );
 }

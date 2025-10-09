@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
+    setError("");
     const valid = await checkUserLogin(username, password);
     if (valid) {
       localStorage.setItem("authorName", username);
@@ -20,28 +21,31 @@ export default function LoginPage() {
     }
   };
 
-  const buttonStyle = {
-    background: "linear-gradient(145deg, #f5f5f5, #dcdcdc)", // 밝은 메탈 느낌
-    color: "#333",
-    border: "1px solid #ccc",
-    borderRadius: "25px", // 타원형
-    padding: "12px 24px",
-    cursor: "pointer",
-    fontSize: "18px",
-    fontWeight: 600,
-    boxShadow: "2px 2px 5px rgba(0,0,0,0.2)",
-    transition: "0.2s",
-    width: "100%",
+  const containerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    padding: "5vw",
+    fontFamily: "돋움",
+    backgroundColor: "#f0f0f0",
   };
 
-  const containerStyle = {
-    padding: "20px",
-    fontFamily: "돋움",
+  const cardStyle = {
+    width: "100%",
     maxWidth: "400px",
-    margin: "50px auto",
-    backgroundColor: "#f0f0f0",
-    borderRadius: "12px",
+    backgroundColor: "#fff",
+    borderRadius: "16px",
     boxShadow: "2px 2px 10px rgba(0,0,0,0.1)",
+    padding: "8vw 6vw",
+    textAlign: "center",
+  };
+
+  const titleStyle = {
+    fontSize: "clamp(22px, 5vw, 28px)",
+    marginBottom: "2rem",
+    color: "#222",
   };
 
   const inputStyle = {
@@ -50,45 +54,63 @@ export default function LoginPage() {
     marginBottom: "12px",
     borderRadius: "8px",
     border: "1px solid #ccc",
-    boxSizing: "border-box",
     fontSize: "16px",
+    color: "#000",
+    outline: "none",
   };
 
-  const errorStyle = {
-    color: "red",
-    marginBottom: "12px",
-    fontSize: "14px",
+  const buttonStyle = {
+    background: "linear-gradient(145deg, #f5f5f5, #dcdcdc)",
+    color: "#333",
+    border: "1px solid #ccc",
+    borderRadius: "25px",
+    padding: "12px 24px",
+    cursor: "pointer",
+    fontSize: "18px",
+    fontWeight: 600,
+    boxShadow: "2px 2px 5px rgba(0,0,0,0.2)",
+    width: "100%",
+    maxWidth: "250px",
+    transition: "0.2s",
   };
 
   return (
     <div style={containerStyle}>
-      <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>로그인</h1>
+      <div style={cardStyle}>
+        <h1 style={titleStyle}>로그인</h1>
 
-      <input
-        placeholder="사용자명"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        style={inputStyle}
-      />
+        <input
+          type="text"
+          placeholder="사용자명"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          style={inputStyle}
+        />
+        <input
+          type="password"
+          placeholder="비밀번호"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={inputStyle}
+        />
 
-      <input
-        placeholder="비밀번호"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        style={inputStyle}
-      />
+        {error && (
+          <p style={{ color: "red", marginBottom: "1rem" }}>{error}</p>
+        )}
 
-      {error && <p style={errorStyle}>{error}</p>}
-
-      <button
-        onClick={handleLogin}
-        style={buttonStyle}
-        onMouseOver={(e) => (e.currentTarget.style.boxShadow = "4px 4px 10px rgba(0,0,0,0.3)")}
-        onMouseOut={(e) => (e.currentTarget.style.boxShadow = "2px 2px 5px rgba(0,0,0,0.2)")}
-      >
-        로그인
-      </button>
+        <button
+          onClick={handleLogin}
+          style={buttonStyle}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.boxShadow = "4px 4px 10px rgba(0,0,0,0.3)")
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.boxShadow = "2px 2px 5px rgba(0,0,0,0.2)")
+          }
+        >
+          로그인
+        </button>
+      </div>
     </div>
   );
 }
