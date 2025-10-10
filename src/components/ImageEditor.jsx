@@ -120,7 +120,7 @@ export default function ImageEditor({ author }) {
         link.href = canvas.toDataURL("image/jpeg");
         link.download = filename;
         link.click();
-        alert("업로드 성공! 모바일에 저장되었습니다.");
+        alert("업로드 성공!.");
       } else alert("업로드 실패: "+res.error);
     } catch(err){ alert("업로드 오류: "+err.message); }
     setUploading(false);
@@ -137,26 +137,30 @@ export default function ImageEditor({ author }) {
 
   return (
     <div style={{padding:20,fontFamily:"돋움",backgroundColor:"#f0f0f0"}}>
-     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-  <h2 style={{ margin: 0, fontSize: 20 }}>현장사진 편집 ({author})</h2>
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+  <h2 style={{ fontSize: "clamp(20px, 5vw, 28px)", color: "#222", margin: 0 }}>
+    현장사진 편집 ({author})
+  </h2>
   <button
     onClick={() => {
-      
       localStorage.removeItem("authorName");
-      router.push("/"); // 홈화면으로 이동
+      router.push("/");
     }}
     style={{
-      padding: "4px 8px",  // 작게
-      fontSize: 12,
-      borderRadius: 6,
-      border: "1px solid #ccc",
+      padding: "8px 16px",
+      fontSize: "14px",
+      borderRadius: 20,
+      backgroundColor: "#f44336",
+      color: "#222", // 버튼 글자도 짙은색
+      border: "none",
       cursor: "pointer",
-      background: "#f5f5f5",
+      boxShadow: "1px 1px 4px rgba(0,0,0,0.3)"
     }}
   >
     로그아웃
   </button>
 </div>
+
       {/* 사진선택 */}
       <input type="file" accept="image/*" onChange={handleImageChange} style={{...buttonStyle, display:"block"}}/>
 
