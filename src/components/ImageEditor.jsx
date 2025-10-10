@@ -10,7 +10,9 @@ export default function ImageEditor({ author }) {
   const [siteData, setSiteData] = useState([]);
   const [entries, setEntries] = useState([
     { key: 1, field: "현장명", value: "" },
-    { key: 2, field: "일자", value: "" },
+    { key: 2, 
+    field: "일자", 
+    value: new Date().toISOString().slice(0,10)},
 
   ]);
   const [formList, setFormList] = useState([]);
@@ -32,9 +34,15 @@ export default function ImageEditor({ author }) {
     if (!form) return;
     const fields = form["항목명"].split(",");
     const newEntries = [...entries];
-    fields.forEach(field => {
-      if (!newEntries.some(e => e.field === field)) newEntries.push({ key: Date.now()+Math.random(), field, value: "" });
+fields.forEach(field => {
+  if (!newEntries.some(e => e.field === field)) {
+    newEntries.push({
+      key: Date.now() + Math.random(),
+      field,
+      value: field === "일자" ? new Date().toISOString().slice(0,10) : ""
     });
+  }
+});
     setEntries(newEntries);
   };
 
@@ -52,7 +60,7 @@ export default function ImageEditor({ author }) {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     // 🔹 표 위치 및 크기 (이미지 전체 9등분, 왼쪽 아래 한 칸)
-    const padding = 10; // 이미지 가장자리에서 여백
+    const padding = 0; // 이미지 가장자리에서 여백
     const tableWidth = canvas.width / 3 - padding * 2;
     const tableHeight = canvas.height / 3 - padding * 2;
     const tableX = padding;
@@ -105,31 +113,45 @@ export default function ImageEditor({ author }) {
 }, [entries, imageFile]);
 
   const handleUpload = async () => {
-    if(!allRequiredFilled()){ alert("모든 입력 필드는 필수입니다."); return; }
-    if(!canvasRef.current){ alert("캔버스가 없습니다."); return; }
-    setUploading(true);
-    const canvas = canvasRef.current;
-    const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
-    const filename = entries.map(e=>e.value).filter(Boolean).join("_")+".jpg";
-    const date = entries.find(e=>e.field==="일자")?.value||"";
-    const siteName = entries.find(e=>e.field==="현장명")?.value||"";
-    try{
-      const res = await uploadPhoto(base64, filename, date, siteName, author);
-      if(res.success){
-        const link = document.createElement("a");
-        link.href = canvas.toDataURL("image/jpeg");
-        link.download = filename;
-        link.click();
-        alert("업로드 성공!.");
-      } else alert("업로드 실패: "+res.error);
-    } catch(err){ alert("업로드 오류: "+err.message); }
-    setUploading(false);
-  };
+  if (!allRequiredFilled()) { alert("모든 입력 필드는 필수입니다."); return; }
+  if (!canvasRef.current) { alert("캔버스가 없습니다."); return; }
+  setUploading(true);
+
+  const canvas = canvasRef.current;
+  const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
+
+  // 🔹 엔트리 데이터를 JSON 형태로 준비
+  const entryData = {};
+  entries.forEach(e => { entryData[e.field] = e.value; });
+
+  // 🔹 작성자 정보 추가
+  entryData["작성자"] = author;
+
+  // 🔹 파일 이름: 현장명 + 작성자 + 위치 등
+  const filename = Object.values(entryData).filter(Boolean).join("_") + ".jpg";
+
+  try {
+    // 이미지 업로드 + 엔트리 데이터를 함께 전달
+    // Apps Script에서 entryData를 파싱하여 시트 업데이트
+    const res = await uploadPhoto(base64, filename, entryData);
+
+    if (res.success) {
+      alert("업로드 및 시트 저장 성공!");
+    } else {
+      alert("업로드 실패: " + res.error);
+    }
+  } catch (err) {
+    alert("업로드 오류: " + err.message);
+  }
+
+  setUploading(false);
+};
+
 
   const buttonStyle = {
     background: "linear-gradient(145deg, #f5f5f5, #dcdcdc)",
     color:"#333", border:"1px solid #ccc", borderRadius:"10px",
-    padding:"12px 20px", cursor:"pointer", fontSize:14,
+    padding:"8px 12px", cursor:"pointer", fontSize:14,
     boxShadow:"2px 2px 5px rgba(0,0,0,0.2)", marginRight:10, marginBottom:10
   };
 
@@ -147,10 +169,10 @@ export default function ImageEditor({ author }) {
       router.push("/");
     }}
     style={{
-      padding: "8px 16px",
-      fontSize: "14px",
-      borderRadius: 20,
-      backgroundColor: "#f44336",
+      padding: "6px 12px",
+      fontSize: "12px",
+      borderRadius: "10px",
+      backgroundColor: "#ecebf7ff",
       color: "#222", // 버튼 글자도 짙은색
       border: "none",
       cursor: "pointer",
@@ -161,8 +183,6 @@ export default function ImageEditor({ author }) {
   </button>
 </div>
 
-      {/* 사진선택 */}
-      <input type="file" accept="image/*" onChange={handleImageChange} style={{...buttonStyle, display:"block"}}/>
 
       {/* 양식 불러오기 + 항목 추가 */}
       <div style={{display:"flex",alignItems:"center", marginBottom:10}}>
@@ -177,10 +197,15 @@ export default function ImageEditor({ author }) {
       {/* 입력폼 */}
       <InputForm entries={entries} setEntries={setEntries} siteData={siteData}/>
 
+        <div style={{display:"flex",alignItems:"center", marginBottom:10}}>
+      {/* 사진선택 */}
+      <input type="file" accept="image/*" onChange={handleImageChange} style={{...buttonStyle, display:"block"}}/>
+
       {/* 업로드 버튼 */}
       <button onClick={handleUpload} disabled={uploading} style={{...buttonStyle, opacity:uploading?0.5:1}}>
         {uploading ? "전송 중..." : "업로드"}
       </button>
+        </div>
 
       {/* 미리보기 */}
       <canvas ref={canvasRef} width={600} height={500} style={{border:"1px solid #ccc",marginTop:10, width:"100%"}}/>

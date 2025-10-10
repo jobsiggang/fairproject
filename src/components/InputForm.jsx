@@ -33,24 +33,33 @@ export default function InputForm({ entries, setEntries, siteData }) {
     background: "#ddd",
     border: "1px solid #ccc",
     borderRadius: "6px",
-    padding: "4px 6px",
+    padding: "2px 4px",
     fontSize: "12px",
     cursor: "pointer",
     marginLeft: "4px",
   };
 
-  const inputStyle = {
-    flex: 1,
-    padding: "8px",
-    marginBottom: "4px",
-    borderRadius: "6px",
+  // ✅ 항목명, 내용 필드 스타일 조정
+  const fieldInputStyle = {
+    width: "10ch", // 약 5글자 크기
+    padding: "4px",
+    borderRadius: "4px",
     border: "1px solid #ccc",
-    fontSize: "16px",
-    color: "#000",
+    fontSize: "14px",
+    marginRight: "4px",
+  };
+
+  const valueInputStyle = {
+    width: "20ch", // 약 10글자 크기
+    padding: "4px",
+    borderRadius: "4px",
+    border: "1px solid #ccc",
+    fontSize: "14px",
+    flexShrink: 0,
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
       {entries.map((entry, idx) => (
         <div
           key={entry.key}
@@ -60,68 +69,44 @@ export default function InputForm({ entries, setEntries, siteData }) {
             alignItems: "center",
             border: "1px solid #ccc",
             borderRadius: 6,
-            padding: 6,
+            padding: 4,
             backgroundColor: "#fff",
           }}
         >
           <input
-            style={inputStyle}
+            style={fieldInputStyle}
             value={entry.field}
             onChange={(e) => handleFieldChange(entry.key, e.target.value)}
           />
 
-          {entry.field === "현장명" ? (
+          {siteData.some(d => d.hasOwnProperty(entry.field)) ? (
             <select
-              style={inputStyle}
+              style={valueInputStyle}
               value={entry.value}
               onChange={(e) => handleValueChange(entry.key, e.target.value)}
             >
               <option value="">선택</option>
-              {[...new Set(siteData.map((d) => d["현장명"]))].map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          ) : entry.field === "공종명" ? (
-            <select
-              style={inputStyle}
-              value={entry.value}
-              onChange={(e) => handleValueChange(entry.key, e.target.value)}
-            >
-              <option value="">선택</option>
-              {siteData.map((d) => d["공종명"]).filter(Boolean).map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          ) : entry.field === "공종코드" ? (
-            <select
-              style={inputStyle}
-              value={entry.value}
-              onChange={(e) => handleValueChange(entry.key, e.target.value)}
-            >
-              <option value="">선택</option>
-              {siteData.map((d) => d["공종코드"]).filter(Boolean).map((code) => (
-                <option key={code} value={code}>{code}</option>
+              {[...new Set(siteData.map(d => d[entry.field]).filter(Boolean))].map((val) => (
+                <option key={val} value={val}>{val}</option>
               ))}
             </select>
           ) : entry.field === "일자" ? (
             <input
               type="date"
-              style={inputStyle}
+              style={valueInputStyle}
               value={entry.value}
               onChange={(e) => handleValueChange(entry.key, e.target.value)}
             />
           ) : (
             <input
-              style={inputStyle}
+              style={valueInputStyle}
               value={entry.value}
               placeholder={entry.field}
               onChange={(e) => handleValueChange(entry.key, e.target.value)}
             />
           )}
 
-          <div style={{ display: "flex", marginLeft: "auto", marginTop: 4 }}>
+          <div style={{ display: "flex", marginLeft: "auto", marginTop: 2 }}>
             <button style={smallButton} onClick={() => moveEntry(idx, -1)}>▲</button>
             <button style={smallButton} onClick={() => moveEntry(idx, 1)}>▼</button>
             {idx >= 3 && <button style={smallButton} onClick={() => removeEntry(entry.key)}>삭제</button>}

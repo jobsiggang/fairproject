@@ -55,7 +55,7 @@ export default function HomePage() {
   const smallButtonStyle = {
     padding: "8px 16px",
     borderRadius: 20,
-    backgroundColor: "#f44336",
+    backgroundColor: "#d6cef2ff",
     color: "#fff",
     border: "none",
     cursor: "pointer",

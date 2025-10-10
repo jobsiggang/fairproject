@@ -1,9 +1,9 @@
-export async function uploadPhoto(base64, filename, date, siteName, author ) {
+export async function uploadPhoto(base64, filename, entryData) {
   try {
     const res = await fetch("/api/uploadPhoto", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ base64, filename, date, siteName, author } ),
+      body: JSON.stringify({ base64, filename, entryData } ),
     });
 
     const data = await res.json();

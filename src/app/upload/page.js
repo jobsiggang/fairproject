@@ -22,7 +22,6 @@ export default function UploadPage() {
 
   return (
     <div>
-      <h1>업로드 페이지</h1>
       <ImageEditor author={author} />
     </div>
   );
