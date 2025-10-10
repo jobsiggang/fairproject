@@ -27,7 +27,7 @@ export default function LoginPage() {
     alignItems: "center",
     justifyContent: "center",
     minHeight: "100vh",
-    padding: "5vw",
+    padding: "20px",
     fontFamily: "돋움",
     backgroundColor: "#f0f0f0",
   };
@@ -36,23 +36,30 @@ export default function LoginPage() {
     width: "100%",
     maxWidth: "400px",
     backgroundColor: "#fff",
-    borderRadius: "16px",
+    borderRadius: "12px",
     boxShadow: "2px 2px 10px rgba(0,0,0,0.1)",
-    padding: "8vw 6vw",
+    padding: "30px 20px",
     textAlign: "center",
   };
 
   const titleStyle = {
-    fontSize: "clamp(22px, 5vw, 28px)",
-    marginBottom: "2rem",
-    color: "#222",
+    fontSize: "24px",
+    marginBottom: "16px",
+    color: "#333",
+  };
+
+  const descStyle = {
+    fontSize: "16px",
+    color: "#555",
+    marginBottom: "20px",
+    lineHeight: 1.5,
   };
 
   const inputStyle = {
     width: "100%",
-    padding: "12px",
+    padding: "10px",
     marginBottom: "12px",
-    borderRadius: "8px",
+    borderRadius: "6px",
     border: "1px solid #ccc",
     fontSize: "16px",
     color: "#000",
@@ -66,11 +73,10 @@ export default function LoginPage() {
     borderRadius: "25px",
     padding: "12px 24px",
     cursor: "pointer",
-    fontSize: "18px",
+    fontSize: "16px",
     fontWeight: 600,
     boxShadow: "2px 2px 5px rgba(0,0,0,0.2)",
     width: "100%",
-    maxWidth: "250px",
     transition: "0.2s",
   };
 
@@ -78,6 +84,9 @@ export default function LoginPage() {
     <div style={containerStyle}>
       <div style={cardStyle}>
         <h1 style={titleStyle}>로그인</h1>
+        <p style={descStyle}>
+          시스템을 사용하려면 로그인 후, 사진 업로드 및 편집 페이지로 이동하세요.
+        </p>
 
         <input
           type="text"

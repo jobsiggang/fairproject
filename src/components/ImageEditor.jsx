@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation"; // ← 추가
 import InputForm from "./InputForm";
 import { fetchSheetData } from "@/lib/googleSheet";
 import { uploadPhoto } from "@/lib/googleDrive";
 
 export default function ImageEditor({ author }) {
+  const router = useRouter(); // ← 추가
   const [siteData, setSiteData] = useState([]);
   const [entries, setEntries] = useState([
     { key: 1, field: "현장명", value: "" },
@@ -126,8 +128,8 @@ export default function ImageEditor({ author }) {
 
   const buttonStyle = {
     background: "linear-gradient(145deg, #f5f5f5, #dcdcdc)",
-    color:"#333", border:"1px solid #ccc", borderRadius:"25px",
-    padding:"12px 20px", cursor:"pointer", fontSize:16,
+    color:"#333", border:"1px solid #ccc", borderRadius:"10px",
+    padding:"12px 20px", cursor:"pointer", fontSize:14,
     boxShadow:"2px 2px 5px rgba(0,0,0,0.2)", marginRight:10, marginBottom:10
   };
 
@@ -135,8 +137,26 @@ export default function ImageEditor({ author }) {
 
   return (
     <div style={{padding:20,fontFamily:"돋움",backgroundColor:"#f0f0f0"}}>
-      <h2>현장사진 편집 ({author})</h2>
-
+     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+  <h2 style={{ margin: 0, fontSize: 20 }}>현장사진 편집 ({author})</h2>
+  <button
+    onClick={() => {
+      
+      localStorage.removeItem("authorName");
+      router.push("/"); // 홈화면으로 이동
+    }}
+    style={{
+      padding: "4px 8px",  // 작게
+      fontSize: 12,
+      borderRadius: 6,
+      border: "1px solid #ccc",
+      cursor: "pointer",
+      background: "#f5f5f5",
+    }}
+  >
+    로그아웃
+  </button>
+</div>
       {/* 사진선택 */}
       <input type="file" accept="image/*" onChange={handleImageChange} style={{...buttonStyle, display:"block"}}/>
 
