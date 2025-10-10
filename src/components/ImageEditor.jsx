@@ -187,7 +187,17 @@ fields.forEach(field => {
       {/* 양식 불러오기 + 항목 추가 */}
       <div style={{display:"flex",alignItems:"center", marginBottom:10}}>
         <select value={selectedForm} onChange={e=>setSelectedForm(e.target.value)}
-          style={{flex:1,padding:8,fontSize:16,borderRadius:6,border:"1px solid #ccc", marginRight:4}}>
+        style={{
+  flex: 1,
+  padding: 8,
+  fontSize: 14,
+  borderRadius: 6,
+  border: "1px solid #ccc",
+  marginRight: 4,
+  color: "#000",      // 글자색 검정
+  fontWeight: "bold"  // 진하게
+}}
+>
           <option value="">양식 선택</option>
           {formList.map(f=><option key={f} value={f}>{f}</option>)}
         </select>

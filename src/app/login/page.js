@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { checkUserLogin } from "@/lib/googleSheet";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,12 +11,22 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     setError("");
-    const valid = await checkUserLogin(username, password);
-    if (valid) {
+
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
       localStorage.setItem("authorName", username);
+      localStorage.setItem("userRole", data.role); // 관리자 or 일반사용자
+      console.log("🚀 로그인 성공:", { username, role: data.role });
       router.push("/upload");
     } else {
-      setError("아이디 또는 비밀번호가 올바르지 않습니다.");
+      setError(data.message || "로그인 실패");
     }
   };
 
@@ -40,19 +49,6 @@ export default function LoginPage() {
     boxShadow: "2px 2px 10px rgba(0,0,0,0.1)",
     padding: "30px 20px",
     textAlign: "center",
-  };
-
-  const titleStyle = {
-    fontSize: "24px",
-    marginBottom: "16px",
-    color: "#333",
-  };
-
-  const descStyle = {
-    fontSize: "16px",
-    color: "#555",
-    marginBottom: "20px",
-    lineHeight: 1.5,
   };
 
   const inputStyle = {
@@ -83,8 +79,17 @@ export default function LoginPage() {
   return (
     <div style={containerStyle}>
       <div style={cardStyle}>
-        <h1 style={titleStyle}>로그인</h1>
-        <p style={descStyle}>
+        <h1 style={{ fontSize: "24px", marginBottom: "16px", color: "#333" }}>
+          로그인
+        </h1>
+        <p
+          style={{
+            fontSize: "16px",
+            color: "#555",
+            marginBottom: "20px",
+            lineHeight: 1.5,
+          }}
+        >
           시스템을 사용하려면 로그인 후, 사진 업로드 및 편집 페이지로 이동하세요.
         </p>
 
