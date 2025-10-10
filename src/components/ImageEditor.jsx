@@ -125,11 +125,11 @@ fields.forEach(field => {
   entries.forEach(e => { entryData[e.field] = e.value; });
 
   // 🔹 작성자 정보 추가
-  entryData["작성자"] = author;
-
+  
   // 🔹 파일 이름: 현장명 + 작성자 + 위치 등
   const filename = Object.values(entryData).filter(Boolean).join("_") + ".jpg";
-
+  
+  entryData["작성자"] = author;
   try {
     // 이미지 업로드 + 엔트리 데이터를 함께 전달
     // Apps Script에서 entryData를 파싱하여 시트 업데이트
