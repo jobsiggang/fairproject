@@ -40,23 +40,29 @@ export default function InputForm({ entries, setEntries, siteData }) {
   };
 
   // ✅ 항목명, 내용 필드 스타일 조정
-  const fieldInputStyle = {
-    width: "10ch", // 약 5글자 크기
-    padding: "4px",
-    borderRadius: "4px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-    marginRight: "4px",
-  };
+ // ✅ 항목명, 내용 필드 스타일 조정
+const fieldInputStyle = {
+  width: "10ch", // 약 5글자 크기
+  padding: "4px",
+  borderRadius: "4px",
+  border: "1px solid #ccc",
+  fontSize: "14px",
+  marginRight: "4px",
+  color: "#000",           // ← 글자색 검정색
+  fontWeight: "bold",      // ← 글자 진하게
+};
 
-  const valueInputStyle = {
-    width: "20ch", // 약 10글자 크기
-    padding: "4px",
-    borderRadius: "4px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-    flexShrink: 0,
-  };
+const valueInputStyle = {
+  width: "20ch", // 약 10글자 크기
+  padding: "4px",
+  borderRadius: "4px",
+  border: "1px solid #ccc",
+  fontSize: "14px",
+  flexShrink: 0,
+  color: "#000",           // ← 글자색 검정색
+  fontWeight: "bold",      // ← 글자 진하게
+};
+
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
