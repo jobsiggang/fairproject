@@ -1,7 +1,16 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 
 export default function InputForm({ entries, setEntries, siteData }) {
+  // 오늘 날짜를 yyyy-MM-dd 형식으로 반환하는 함수
+  const getToday = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const handleFieldChange = (key, newField) => {
     setEntries((prev) =>
       prev.map((e) => (e.key === key ? { ...e, field: newField } : e))
@@ -27,7 +36,16 @@ export default function InputForm({ entries, setEntries, siteData }) {
     });
   };
 
-  const removeEntry = (key) => setEntries((prev) => prev.filter((e) => e.key !== key));
+  const removeEntry = (key) =>
+    setEntries((prev) => prev.filter((e) => e.key !== key));
+
+  const addEntry = () => {
+    const newKey = Date.now() + Math.random();
+    setEntries((prev) => [
+      ...prev,
+      { key: newKey, field: "새 항목", value: "" },
+    ]);
+  };
 
   const smallButton = {
     background: "#ddd",
@@ -37,35 +55,48 @@ export default function InputForm({ entries, setEntries, siteData }) {
     fontSize: "12px",
     cursor: "pointer",
     marginLeft: "4px",
+    fontWeight: "bold",
   };
 
-  // ✅ 항목명, 내용 필드 스타일 조정
- // ✅ 항목명, 내용 필드 스타일 조정
-const fieldInputStyle = {
-  width: "10ch", // 약 5글자 크기
-  padding: "4px",
-  borderRadius: "4px",
-  border: "1px solid #ccc",
-  fontSize: "14px",
-  marginRight: "4px",
-  color: "#000",           // ← 글자색 검정색
-  fontWeight: "bold",      // ← 글자 진하게
-};
+  const fieldInputStyle = {
+    width: "10ch",
+    padding: "4px",
+    borderRadius: "4px",
+    border: "1px solid #ccc",
+    fontSize: "14px",
+    marginRight: "4px",
+    color: "#000",
+    fontWeight: "bold",
+  };
 
-const valueInputStyle = {
-  width: "20ch", // 약 10글자 크기
-  padding: "4px",
-  borderRadius: "4px",
-  border: "1px solid #ccc",
-  fontSize: "14px",
-  flexShrink: 0,
-  color: "#000",           // ← 글자색 검정색
-  fontWeight: "bold",      // ← 글자 진하게
-};
+  const valueInputStyle = {
+    width: "20ch",
+    padding: "4px",
+    borderRadius: "4px",
+    border: "1px solid #ccc",
+    fontSize: "14px",
+    flexShrink: 0,
+    color: "#000",
+    fontWeight: "bold",
+  };
 
+  const addButtonStyle = {
+    marginBottom: 6,
+    padding: "2px 6px",
+    fontSize: 12,
+    borderRadius: 4,
+    background: "#ddd",
+    cursor: "pointer",
+    border: "1px solid #ccc",
+    fontWeight: "bold",
+    alignSelf: "flex-start",
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+      {/* + 항목 추가 버튼 맨 위로 */}
+      <button style={addButtonStyle} onClick={addEntry}>+ 항목 추가</button>
+
       {entries.map((entry, idx) => (
         <div
           key={entry.key}
@@ -100,7 +131,7 @@ const valueInputStyle = {
             <input
               type="date"
               style={valueInputStyle}
-              value={entry.value}
+              value={entry.value || getToday()} // 오늘 날짜 기본값
               onChange={(e) => handleValueChange(entry.key, e.target.value)}
             />
           ) : (
