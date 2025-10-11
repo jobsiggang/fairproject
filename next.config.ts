@@ -1,7 +1,10 @@
-import type { NextConfig } from "next";
+import { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  images: {
+    unoptimized: true, // PWA에서 로컬 이미지 경로 문제 방지
+  },
 };
 
 export default nextConfig;
