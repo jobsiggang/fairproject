@@ -60,6 +60,7 @@ export default function LoginPage() {
     fontSize: "16px",
     color: "#000",
     outline: "none",
+    fontWeight: "bold",
   };
 
   const buttonStyle = {
