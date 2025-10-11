@@ -5,7 +5,7 @@ export async function fetchSheetData(sheetName = "현장목록") {
   try {
     const author = typeof window !== "undefined" ? localStorage.getItem("authorName") : null;
     const role = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
-
+    console.log("role:", role);
     // ✅ 관리자면 관리자용 URL 사용
     const SCRIPT_URL =
       role === "admin"
@@ -23,18 +23,3 @@ export async function fetchSheetData(sheetName = "현장목록") {
   }
 }
 
-
-// // ✅ 로그인 검증 함수
-// export async function checkUserLogin(username, password) {
-//   // ✅ 관리자 계정 별도 처리
-//   console.log("Checking login for:", username);
-//   if (username == process.env.ADMIN_NAME && password == process.env.ADMIN_PASSWORD) {
-//     return true;
-//   }
-
-//   // ✅ 일반 사용자 시트 확인
-//   const users = await fetchSheetData("사용자");
-//   return users.some(
-//     (u) => u.username ==username && u.password == password
-//   );
-// }
