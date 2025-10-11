@@ -1,11 +1,6 @@
 "use client";
-// 서버 전용 export 가능
-export const metadata = {
-  title: "Upload Page",
-  description: "이미지 업로드 페이지",
-  themeColor: "#ffcc00",
-};
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import InputForm from "./InputForm";
 import ImageCanvas from "./ImageCanvas";
@@ -14,8 +9,6 @@ import { uploadPhoto } from "@/lib/googleDrive";
 
 export default function ImageEditor({ author }) {
   const router = useRouter();
-  const videoRef = useRef(null);
-
   const canvasWidth = 1200;
   const canvasHeight = 1000;
 
@@ -42,7 +35,6 @@ export default function ImageEditor({ author }) {
     fetchData();
   }, []);
 
-  // 입력양식 불러오기
   const handleLoadForm = async () => {
     if (!selectedForm) return;
     const allForms = await fetchSheetData("입력양식");
@@ -59,47 +51,19 @@ export default function ImageEditor({ author }) {
     setEntries(newEntries);
   };
 
-  // 카메라 접근
-  useEffect(() => {
-    if (typeof window !== "undefined" && navigator.mediaDevices) {
-      navigator.mediaDevices
-        .getUserMedia({ video: { facingMode: "environment" } })
-        .then((stream) => {
-          if (videoRef.current) videoRef.current.srcObject = stream;
-        })
-        .catch((err) => console.error("카메라 접근 실패:", err));
-    }
-  }, []);
-
-  // 사진 찍기
-  const takePhoto = () => {
-    if (!videoRef.current) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const file = new File([blob], `photo_${Date.now()}.jpg`, { type: "image/jpeg" });
-      const url = URL.createObjectURL(file);
-      setImages((prev) => [...prev, { file, url }]);
-      setPreviewIndex(images.length);
-    }, "image/jpeg", 0.95);
-  };
-
-  // 사진 보관함 가져오기
-  const handleImageSelect = (e) => {
-    const files = Array.from(e.target.files).slice(0, 10);
-    const newImages = files.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
-    setImages((prev) => [...prev, ...newImages]);
+  // 모바일 카메라로 사진 찍기
+  const handleCapture = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setImages((prev) => [...prev, { file, url }]);
     setPreviewIndex(images.length);
   };
 
   // 필수 입력 확인
   const allRequiredFilled = () => entries.every((e) => e.value && e.value.trim() !== "");
 
-  // 업로드 처리
+  // 업로드 처리 (기존 로직 그대로)
   const handleUpload = async () => {
     if (!allRequiredFilled()) return alert("모든 입력 필드는 필수입니다.");
     if (!images.length) return alert("이미지를 선택하세요.");
@@ -130,6 +94,7 @@ export default function ImageEditor({ author }) {
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height);
 
+              // 테이블 합성
               const tableWidth = canvas.width / 3;
               const tableHeight = canvas.height / 3;
               const tableX = 0,
@@ -190,9 +155,7 @@ export default function ImageEditor({ author }) {
       }
     }
 
-    // 업로드 완료 후 Blob URL 해제
     images.forEach((img) => URL.revokeObjectURL(img.url));
-
     setUploadProgress(100);
     setTimeout(() => {
       setUploading(false);
@@ -251,167 +214,118 @@ export default function ImageEditor({ author }) {
       {/* 입력폼 */}
       <InputForm entries={entries} setEntries={setEntries} siteData={siteData} />
 
-     {/* 버튼 그룹: 사진찍기, 사진가져오기, 업로드 */}
-<div
-  style={{
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 10,
-    alignItems: "center",
-  }}
->
-  {/* 사진 찍기 */}
-  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-    <video
-      ref={videoRef}
-      autoPlay
-      playsInline
-      style={{ width: 200, borderRadius: 8, border: "2px solid #222" }}
-    />
-    <button
-      onClick={takePhoto}
-      style={{
-        padding: "6px 12px",
-        borderRadius: 4,
-        background: "#ffcc00",
-        fontWeight: "bold",
-        border: "2px solid #222",
-        cursor: "pointer",
-      }}
-    >
-      사진 찍기
-    </button>
-  </div>
+      {/* 모바일 사진 찍기 버튼 */}
+      <div style={{ marginTop: 20 }}>
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleCapture}
+          style={{ display: "none" }}
+          id="cameraInput"
+        />
+        <button
+          onClick={() => document.getElementById("cameraInput").click()}
+          style={{ padding: "12px 24px", fontSize: 18, borderRadius: 8, background: "#ffcc00", border: "2px solid #222", fontWeight: "bold" }}
+        >
+          📸 사진 찍기
+        </button>
+      </div>
 
-  {/* 사진 가져오기 */}
-  <div>
-    <input
-      type="file"
-      accept="image/*"
-      multiple
-      onChange={handleImageSelect}
-      id="fileInput"
-      style={{ display: "none" }}
-    />
-    <button
-      onClick={() => document.getElementById("fileInput").click()}
-      style={{
-        padding: "6px 12px",
-        borderRadius: 4,
-        background: "#ffcc00",
-        fontWeight: "bold",
-        border: "2px solid #222",
-        cursor: "pointer",
-      }}
-    >
-      사진 가져오기
-    </button>
-  </div>
+      {/* 섬네일 */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+        {images.map((img, i) => (
+          <div key={i} style={{ position: "relative" }}>
+            <img
+              src={img.url}
+              alt={`thumbnail-${i}`}
+              onClick={() => setPreviewIndex(i)}
+              style={{
+                width: 80,
+                height: 80,
+                objectFit: "cover",
+                border: previewIndex === i ? "3px solid #007bff" : "2px solid #222",
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
+            />
+            <button
+              onClick={() => handleDelete(i)}
+              style={{
+                position: "absolute",
+                top: -6,
+                right: -6,
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                backgroundColor: "#ff4d4f",
+                color: "#fff",
+                border: "none",
+                fontSize: 14,
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
 
-  {/* 업로드 */}
-  <button
-    onClick={handleUpload}
-    disabled={uploading}
-    style={{
-      padding: "6px 12px",
-      cursor: uploading ? "not-allowed" : "pointer",
-      borderRadius: 4,
-      fontWeight: "bold",
-      border: "2px solid #222",
-      background: uploading ? "#ccc" : "#ffcc00",
-    }}
-  >
-    {uploading ? "전송 중..." : "업로드"}
-  </button>
-</div>
+      {/* 합성 이미지 미리보기 */}
+      {images[previewIndex] && (
+        <ImageCanvas
+          image={images[previewIndex].file}
+          entries={entries}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+        />
+      )}
 
-{/* 진행률 바 */}
-{uploading && (
-  <div
-    style={{
-      width: "100%",
-      background: "#ddd",
-      borderRadius: 4,
-      height: 20,
-      marginBottom: 10,
-      position: "relative",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        width: `${uploadProgress}%`,
-        height: "100%",
-        background: "#007bff",
-        transition: "width 0.3s ease",
-      }}
-    />
-    <span
-      style={{
-        position: "absolute",
-        top: 0,
-        left: "50%",
-        transform: "translateX(-50%)",
-        fontSize: 12,
-        fontWeight: "bold",
-        color: "#fff",
-      }}
-    >
-      {uploadProgress}%
-    </span>
-  </div>
-)}
-
-{/* 섬네일 */}
-<div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-  {images.map((img, i) => (
-    <div key={i} style={{ position: "relative" }}>
-      <img
-        src={img.url}
-        alt={`thumbnail-${i}`}
-        onClick={() => setPreviewIndex(i)}
-        style={{
-          width: 80,
-          height: 80,
-          objectFit: "cover",
-          border: previewIndex === i ? "3px solid #007bff" : "2px solid #222",
-          borderRadius: 8,
-          cursor: "pointer",
-        }}
-      />
+      {/* 업로드 버튼 */}
       <button
-        onClick={() => handleDelete(i)}
+        onClick={handleUpload}
+        disabled={uploading}
         style={{
-          position: "absolute",
-          top: -6,
-          right: -6,
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          backgroundColor: "#ff4d4f",
-          color: "#fff",
-          border: "none",
-          fontSize: 14,
-          cursor: "pointer",
+          marginTop: 20,
+          padding: "12px 24px",
+          fontSize: 18,
+          borderRadius: 8,
+          background: uploading ? "#ccc" : "#ffcc00",
+          border: "2px solid #222",
           fontWeight: "bold",
+          cursor: uploading ? "not-allowed" : "pointer",
         }}
       >
-        ×
+        {uploading ? "전송 중..." : "업로드"}
       </button>
-    </div>
-  ))}
-</div>
 
-{/* 합성 이미지 미리보기 */}
-{images[previewIndex] && (
-  <ImageCanvas
-    image={images[previewIndex].file}
-    entries={entries}
-    canvasWidth={canvasWidth}
-    canvasHeight={canvasHeight}
-  />
-)}
+      {/* 진행률 바 */}
+      {uploading && (
+        <div style={{ width: "100%", background: "#ddd", borderRadius: 4, height: 20, marginTop: 10, position: "relative", overflow: "hidden" }}>
+          <div
+            style={{
+              width: `${uploadProgress}%`,
+              height: "100%",
+              background: "#007bff",
+              transition: "width 0.3s ease",
+            }}
+          />
+          <span
+            style={{
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontSize: 12,
+              fontWeight: "bold",
+              color: "#fff",
+            }}
+          >
+            {uploadProgress}%
+          </span>
+        </div>
+      )}
     </div>
   );
 }
