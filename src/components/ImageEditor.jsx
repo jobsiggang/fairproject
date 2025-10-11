@@ -56,26 +56,35 @@ export default function ImageEditor({ author }) {
   };
 
   const handleLoadForm = async () => {
-    if (!selectedForm) return;
-    const allForms = await fetchSheetData("입력양식");
-    const form = allForms.find((f) => f["양식명"] === selectedForm);
-    if (!form) return;
-    const fields = form["항목명"].split(",");
-    const newEntries = [...entries];
-    fields.forEach((field) => {
+  if (!selectedForm) return;
+
+  const allForms = await fetchSheetData("입력양식");
+  const form = allForms.find((f) => f["양식명"] === selectedForm);
+  if (!form) return;
+
+  const fields = form["항목명"].split(",");
+
+  // 현장명과 일자만 유지
+  const preservedEntries = entries.filter(
+    (e) => e.field === "현장명" || e.field === "일자"
+  );
+
+  // 새 양식 항목 추가 (중복 제거)
+  const newEntries = [...preservedEntries];
+  fields.forEach((field) => {
+    if (field !== "현장명" && field !== "일자") {
       if (!newEntries.some((e) => e.field === field)) {
         newEntries.push({
           key: Date.now() + Math.random(),
           field,
-          value:
-            field === "일자"
-              ? new Date().toISOString().slice(0, 10).replace(/-/g, ".")
-              : "",
+          value: "",
         });
       }
-    });
-    setEntries(newEntries);
-  };
+    }
+  });
+
+  setEntries(newEntries);
+};
 
   const allRequiredFilled = () =>
     entries.every((e) => e.value && e.value.trim() !== "");

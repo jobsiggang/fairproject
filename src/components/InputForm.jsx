@@ -146,7 +146,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
           <div style={{ display: "flex", marginLeft: "auto", marginTop: 2 }}>
             <button style={smallButton} onClick={() => moveEntry(idx, -1)}>▲</button>
             <button style={smallButton} onClick={() => moveEntry(idx, 1)}>▼</button>
-            {idx >= 3 && <button style={smallButton} onClick={() => removeEntry(entry.key)}>삭제</button>}
+            {idx >= 2 && <button style={smallButton} onClick={() => removeEntry(entry.key)}>삭제</button>}
           </div>
         </div>
       ))}

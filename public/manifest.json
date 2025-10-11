@@ -1,0 +1,21 @@
+{
+  "short_name": "공정한Works",
+  "name": "공정한 Works 현장 관리",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#f0f0f0",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#ffcc00"
+}
