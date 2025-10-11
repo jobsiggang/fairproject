@@ -90,52 +90,55 @@ export default function ImageEditor({ author }) {
     entries.every((e) => e.value && e.value.trim() !== "");
 
   const drawImageWithTable = (ctx, img, entries) => {
-    const canvas = canvasRef.current;
-    const width = canvasSize.width;
-    const height = canvasSize.height;
-    canvas.width = width;
-    canvas.height = height;
-    const drawWidth = width;
-    const drawHeight = height;
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(img, 0, 0, drawWidth, drawHeight);
+  const canvas = canvasRef.current;
+  const width = canvasSize.width;
+  const height = canvasSize.height;
+  canvas.width = width;
+  canvas.height = height;
+  const drawWidth = width;
+  const drawHeight = height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(img, 0, 0, drawWidth, drawHeight);
 
-    const tableWidth = width / 3;
-    const tableHeight = height / 3;
-    const tableX = 0;
-    const tableY = height - tableHeight;
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(tableX, tableY, tableWidth, tableHeight);
-    ctx.strokeStyle = "rgba(0,0,0,0.3)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(tableX, tableY, tableWidth, tableHeight);
+  const tableWidth = width / 3;
+  const tableHeight = height / 3;
+  const tableX = 0;
+  const tableY = height - tableHeight;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(tableX, tableY, tableWidth, tableHeight);
+  ctx.strokeStyle = "rgba(0,0,0,0.3)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(tableX, tableY, tableWidth, tableHeight);
 
-    const rowHeight = tableHeight / entries.length;
-    const col1Width = tableWidth * 0.4;
-    const col2Width = tableWidth - col1Width;
-    entries.forEach((entry, i) => {
-      const y = tableY + i * rowHeight;
-      ctx.beginPath();
-      ctx.moveTo(tableX, y);
-      ctx.lineTo(tableX + tableWidth, y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(tableX + col1Width, y);
-      ctx.lineTo(tableX + col1Width, y + rowHeight);
-      ctx.stroke();
-      ctx.fillStyle = "#000";
-      ctx.font = "bold 11px 돋움";
-      ctx.textBaseline = "middle";
-      const displayValue =
-        entry.field === "일자" ? entry.value.replace(/-/g, ".") : entry.value;
-      ctx.fillText(entry.field, tableX + 2, y + rowHeight / 2);
-      ctx.fillText(displayValue, tableX + col1Width + 2, y + rowHeight / 2);
-    });
+  const rowHeight = tableHeight / entries.length;
+  const col1Width = tableWidth * 0.4;
+  const col2Width = tableWidth - col1Width;
+  entries.forEach((entry, i) => {
+    const y = tableY + i * rowHeight;
     ctx.beginPath();
-    ctx.moveTo(tableX, tableY + tableHeight);
-    ctx.lineTo(tableX + tableWidth, tableY + tableHeight);
+    ctx.moveTo(tableX, y);
+    ctx.lineTo(tableX + tableWidth, y);
     ctx.stroke();
-  };
+    ctx.beginPath();
+    ctx.moveTo(tableX + col1Width, y);
+    ctx.lineTo(tableX + col1Width, y + rowHeight);
+    ctx.stroke();
+    ctx.fillStyle = "#000";
+    ctx.font = "bold 11px 돋움";
+    ctx.textBaseline = "middle";
+
+    // 여기서만 일자 포맷 변경
+    const displayValue =
+      entry.field === "일자" ? entry.value.replace(/-/g, ".") : entry.value;
+
+    ctx.fillText(entry.field, tableX + 2, y + rowHeight / 2);
+    ctx.fillText(displayValue, tableX + col1Width + 2, y + rowHeight / 2);
+  });
+  ctx.beginPath();
+  ctx.moveTo(tableX, tableY + tableHeight);
+  ctx.lineTo(tableX + tableWidth, tableY + tableHeight);
+  ctx.stroke();
+};
 
   // 이미지 및 데이터 변경 시 캔버스 갱신
   useEffect(() => {
