@@ -59,8 +59,8 @@ export default function InputForm({ entries, setEntries, siteData }) {
   };
 
   const fieldInputStyle = {
-    width: "10ch",
-    padding: "4px",
+    width: "8ch",
+    padding: "2px",
     borderRadius: "4px",
     border: "1px solid #ccc",
     fontSize: "14px",
@@ -70,8 +70,8 @@ export default function InputForm({ entries, setEntries, siteData }) {
   };
 
   const valueInputStyle = {
-    width: "20ch",
-    padding: "4px",
+    width: "16ch",
+    padding: "2px",
     borderRadius: "4px",
     border: "1px solid #ccc",
     fontSize: "14px",

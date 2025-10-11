@@ -183,10 +183,10 @@ export default function ImageEditor({ author }) {
 
   // 버튼 스타일
   const baseButton = {
-    flex: 1,
-    height: 36,
+    // flex: 0,   // 버튼이 줄어들지 않음
+    height: 32 ,// input 높이와 맞춤
     cursor: "pointer",
-    borderRadius: 6,
+    borderRadius: 4,
     fontWeight: "bold",
     border: "2px solid #222",
     transition: "all 0.1s ease-in-out",
@@ -381,10 +381,10 @@ export default function ImageEditor({ author }) {
           multiple
           onChange={handleImageChange}
           style={{
-            flex: 1,
-            height: 36,
+           
+            height: 32,
             fontSize: 14,
-            borderRadius: 6,
+            borderRadius: 4,
             border: "2px solid #222",
             background: "#ffcc00",
             color: "#000",

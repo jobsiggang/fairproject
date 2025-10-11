@@ -23,7 +23,7 @@ export default function HomePage() {
     fontFamily: "돋움",
     maxWidth: 700,
     margin: "40px auto",
-    background: "linear-gradient(145deg, #f0f0f0, #e0e0e0)", // 밝은 메탈 느낌
+    background: "linear-gradient(145deg, #f0f0f0, #e0e0e0)",
     borderRadius: 16,
     boxShadow: "8px 8px 20px rgba(0,0,0,0.2), -8px -8px 20px rgba(255,255,255,0.7)",
     textAlign: "center",
@@ -34,7 +34,7 @@ export default function HomePage() {
     marginBottom: 15,
     color: "#333",
     fontWeight: "bold",
-    textShadow: "1px 1px 2px rgba(255,255,255,0.6)", // 메탈 반사 느낌
+    textShadow: "1px 1px 2px rgba(255,255,255,0.6)",
   };
 
   const descStyle = {
@@ -44,30 +44,40 @@ export default function HomePage() {
     color: "#555",
     fontWeight: "600",
   };
+    const userStyle = {
+    fontSize: "18px",
+    lineHeight: 1.5,
+    marginBottom: 30,
+    color: "#212884ff",
+    fontWeight: "bold",
+  };
 
   const mainButtonStyle = {
-    padding: "16px 32px",
-    borderRadius: 28,
+    width: "70%",
+    padding: "10px 0",
+    borderRadius: 10,
     background: "linear-gradient(145deg, #d4d4d4, #ffffff)",
-    color: "#222",
-    border: "2px solid #bbb",
+    color: "#000",
+    border: "1px solid #bbb",
     fontWeight: "bold",
     cursor: "pointer",
     marginBottom: 12,
     boxShadow: "4px 4px 10px rgba(0,0,0,0.2), -2px -2px 6px rgba(255,255,255,0.6)",
     transition: "all 0.15s ease-in-out",
+    fontSize: 14,
   };
 
   const smallButtonStyle = {
-    padding: "10px 20px",
-    borderRadius: 20,
+    padding: "5px 10px",
+    borderRadius: 10,
     background: "#aaa",
-    color: "#fff",
+    color: "#000",
     border: "none",
     cursor: "pointer",
-    marginLeft: 12,
+    marginTop: 8,
     fontWeight: "bold",
     transition: "all 0.15s ease-in-out",
+    fontSize: 12,
   };
 
   const handleMouseDown = (e) => {
@@ -85,31 +95,39 @@ export default function HomePage() {
     <div style={containerStyle}>
       <h1 style={titleStyle}>🏗️ 공정한 Works</h1>
       <p style={descStyle}>
-      현장 사진 업로드와 기록 관리를 쉽고 빠르게!<br />
-      관리자에게 받은 사용자명으로 로그인하세요.
+        🏘️ 현장 사진 업로드와 기록 관리를 쉽고 빠르게❗<br />        
       </p>
 
       {author ? (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <button
-            style={mainButtonStyle}
-            onClick={handleUpload}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
-            {author}님, 현장 사진 업로드
-          </button>
-          <button
-            style={smallButtonStyle}
-            onClick={handleLogout}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
-            로그아웃
-          </button>
+        <>
+          <div style={{ marginBottom: 10 }}>
+        <div style={userStyle}>
+              {author}님, 안녕하세요!
         </div>
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <button
+              style={mainButtonStyle}
+              onClick={handleUpload}
+              onMouseDown={handleMouseDown}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              사진 업로드 하러 가기
+            </button>
+          </div>
+          <div>
+            <button
+              style={smallButtonStyle}
+              onClick={handleLogout}
+              onMouseDown={handleMouseDown}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              로그아웃
+            </button>
+          </div>
+        </>
       ) : (
         <button
           style={mainButtonStyle}
