@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
       <head>
-        {/* Manifest 연결 */}
+        {/* PWA 관련 */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#ffcc00" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
