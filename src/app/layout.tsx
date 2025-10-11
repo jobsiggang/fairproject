@@ -10,7 +10,14 @@ export const metadata = {
       { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
     ],
   },
+  
   themeColor: "#ffcc00",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+  },  
+
+
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

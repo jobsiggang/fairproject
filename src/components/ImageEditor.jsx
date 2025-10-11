@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useEffect } from "react";
+// 서버 전용 export 가능
+export const metadata = {
+  title: "Upload Page",
+  description: "이미지 업로드 페이지",
+  themeColor: "#ffcc00",
+};
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import InputForm from "./InputForm";
 import ImageCanvas from "./ImageCanvas";
@@ -8,6 +14,11 @@ import { uploadPhoto } from "@/lib/googleDrive";
 
 export default function ImageEditor({ author }) {
   const router = useRouter();
+  const videoRef = useRef(null);
+
+  const canvasWidth = 1200;
+  const canvasHeight = 1000;
+
   const [siteData, setSiteData] = useState([]);
   const [entries, setEntries] = useState([
     { key: 1, field: "현장명", value: "" },
@@ -15,15 +26,12 @@ export default function ImageEditor({ author }) {
   ]);
   const [formList, setFormList] = useState([]);
   const [selectedForm, setSelectedForm] = useState("");
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState([]); // { file, url } 구조
   const [previewIndex, setPreviewIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const canvasWidth = 1200; // 업로드용 고정
-  const canvasHeight = 1000;
-
-  // ✅ 시트 데이터 로드
+  // 시트 데이터 로드
   useEffect(() => {
     const fetchData = async () => {
       const sites = await fetchSheetData("현장목록");
@@ -34,7 +42,7 @@ export default function ImageEditor({ author }) {
     fetchData();
   }, []);
 
-  // ✅ 입력양식 불러오기
+  // 입력양식 불러오기
   const handleLoadForm = async () => {
     if (!selectedForm) return;
     const allForms = await fetchSheetData("입력양식");
@@ -51,17 +59,47 @@ export default function ImageEditor({ author }) {
     setEntries(newEntries);
   };
 
-  // ✅ 이미지 선택
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files).slice(0, 10);
-    if (files.length) setImages(files);
-    setPreviewIndex(0);
+  // 카메라 접근
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.mediaDevices) {
+      navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: "environment" } })
+        .then((stream) => {
+          if (videoRef.current) videoRef.current.srcObject = stream;
+        })
+        .catch((err) => console.error("카메라 접근 실패:", err));
+    }
+  }, []);
+
+  // 사진 찍기
+  const takePhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `photo_${Date.now()}.jpg`, { type: "image/jpeg" });
+      const url = URL.createObjectURL(file);
+      setImages((prev) => [...prev, { file, url }]);
+      setPreviewIndex(images.length);
+    }, "image/jpeg", 0.95);
   };
 
-  // ✅ 필수 입력 확인
+  // 사진 보관함 가져오기
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files).slice(0, 10);
+    const newImages = files.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
+    setImages((prev) => [...prev, ...newImages]);
+    setPreviewIndex(images.length);
+  };
+
+  // 필수 입력 확인
   const allRequiredFilled = () => entries.every((e) => e.value && e.value.trim() !== "");
 
-  // ✅ 업로드 처리
+  // 업로드 처리
   const handleUpload = async () => {
     if (!allRequiredFilled()) return alert("모든 입력 필드는 필수입니다.");
     if (!images.length) return alert("이미지를 선택하세요.");
@@ -77,7 +115,7 @@ export default function ImageEditor({ author }) {
     const total = images.length;
 
     for (let i = 0; i < total; i++) {
-      const file = images[i];
+      const { file } = images[i];
       const imgObj = new Image();
 
       try {
@@ -89,7 +127,6 @@ export default function ImageEditor({ author }) {
               canvas.height = canvasHeight;
               const ctx = canvas.getContext("2d");
 
-              // 배경 + 표 그리기
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height);
 
@@ -122,9 +159,7 @@ export default function ImageEditor({ author }) {
                 ctx.stroke();
 
                 const displayValue =
-                  entry.field === "일자"
-                    ? entry.value.replace(/-/g, ".")
-                    : entry.value;
+                  entry.field === "일자" ? entry.value.replace(/-/g, ".") : entry.value;
 
                 ctx.fillText(entry.field, tableX + 6, y + rowHeight / 2);
                 ctx.fillText(displayValue, tableX + col1Width + 6, y + rowHeight / 2);
@@ -144,7 +179,6 @@ export default function ImageEditor({ author }) {
           imgObj.src = URL.createObjectURL(file);
         });
 
-        // ✅ 성공 후 진행률 업데이트
         progress = Math.round(((i + 1) / total) * 100);
         setUploadProgress(progress);
       } catch (err) {
@@ -152,11 +186,13 @@ export default function ImageEditor({ author }) {
         alert(`❌ 업로드 실패 (${file.name}): ${err.message}`);
         setUploading(false);
         setUploadProgress(progress);
-        return; // 중단
+        return;
       }
     }
 
-    // ✅ 모든 업로드 완료 후 100% 표시
+    // 업로드 완료 후 Blob URL 해제
+    images.forEach((img) => URL.revokeObjectURL(img.url));
+
     setUploadProgress(100);
     setTimeout(() => {
       setUploading(false);
@@ -164,38 +200,19 @@ export default function ImageEditor({ author }) {
     }, 500);
   };
 
-  // ✅ 이미지 삭제
+  // 이미지 삭제
   const handleDelete = (index) => {
+    const imgToDelete = images[index];
+    URL.revokeObjectURL(imgToDelete.url);
     setImages((prev) => prev.filter((_, i) => i !== index));
     if (previewIndex >= index) setPreviewIndex(Math.max(previewIndex - 1, 0));
   };
 
   return (
-    <div
-      style={{
-        padding: 20,
-        fontFamily: "돋움",
-        backgroundColor: "#f0f0f0",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ padding: 20, fontFamily: "돋움", backgroundColor: "#f0f0f0", minHeight: "100vh" }}>
       {/* 헤더 */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          marginBottom: 20,
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "clamp(18px, 5vw, 22px)",
-            color: "#000",
-            margin: 0,
-          }}
-        >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: 20 }}>
+        <h2 style={{ fontSize: "clamp(18px, 5vw, 22px)", color: "#000", margin: 0 }}>
           🏗️ 공정한 Works 💞 {author}
         </h2>
         <button
@@ -203,44 +220,18 @@ export default function ImageEditor({ author }) {
             localStorage.removeItem("authorName");
             router.push("/");
           }}
-          style={{
-            marginBottom: 6,
-            padding: "4px 8px",
-            fontSize: 12,
-            borderRadius: 4,
-            background: "#ddd",
-            cursor: "pointer",
-            border: "1px solid #ccc",
-            fontWeight: "bold",
-          }}
+          style={{ marginBottom: 6, padding: "4px 8px", fontSize: 12, borderRadius: 4, background: "#ddd", cursor: "pointer", border: "1px solid #ccc", fontWeight: "bold" }}
         >
           로그아웃
         </button>
       </div>
 
       {/* 양식 선택 */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 6,
-          marginBottom: 10,
-        }}
-      >
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
         <select
           value={selectedForm}
           onChange={(e) => setSelectedForm(e.target.value)}
-          style={{
-            flex: "1 1 200px",
-            height: 34,
-            padding: "2px 6px",
-            fontSize: 14,
-            borderRadius: 4,
-            border: "2px solid #222",
-            color: "#000",
-            fontWeight: "bold",
-            background: "#ffcc00",
-          }}
+          style={{ flex: "1 1 200px", height: 34, padding: "2px 6px", fontSize: 14, borderRadius: 4, border: "2px solid #222", color: "#000", fontWeight: "bold", background: "#ffcc00" }}
         >
           <option value="">--입력 양식 선택--</option>
           {formList.map((f) => (
@@ -251,15 +242,7 @@ export default function ImageEditor({ author }) {
         </select>
         <button
           onClick={handleLoadForm}
-          style={{
-            height: 34,
-            padding: "2px 6px",
-            cursor: "pointer",
-            borderRadius: 4,
-            fontWeight: "bold",
-            border: "2px solid #222",
-            background: "#ffcc00",
-          }}
+          style={{ height: 34, padding: "2px 6px", cursor: "pointer", borderRadius: 4, fontWeight: "bold", border: "2px solid #222", background: "#ffcc00" }}
         >
           가져오기
         </button>
@@ -268,138 +251,167 @@ export default function ImageEditor({ author }) {
       {/* 입력폼 */}
       <InputForm entries={entries} setEntries={setEntries} siteData={siteData} />
 
-      {/* 이미지 업로드 영역 */}
-      <div
+     {/* 버튼 그룹: 사진찍기, 사진가져오기, 업로드 */}
+<div
+  style={{
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 10,
+    alignItems: "center",
+  }}
+>
+  {/* 사진 찍기 */}
+  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      style={{ width: 200, borderRadius: 8, border: "2px solid #222" }}
+    />
+    <button
+      onClick={takePhoto}
+      style={{
+        padding: "6px 12px",
+        borderRadius: 4,
+        background: "#ffcc00",
+        fontWeight: "bold",
+        border: "2px solid #222",
+        cursor: "pointer",
+      }}
+    >
+      사진 찍기
+    </button>
+  </div>
+
+  {/* 사진 가져오기 */}
+  <div>
+    <input
+      type="file"
+      accept="image/*"
+      multiple
+      onChange={handleImageSelect}
+      id="fileInput"
+      style={{ display: "none" }}
+    />
+    <button
+      onClick={() => document.getElementById("fileInput").click()}
+      style={{
+        padding: "6px 12px",
+        borderRadius: 4,
+        background: "#ffcc00",
+        fontWeight: "bold",
+        border: "2px solid #222",
+        cursor: "pointer",
+      }}
+    >
+      사진 가져오기
+    </button>
+  </div>
+
+  {/* 업로드 */}
+  <button
+    onClick={handleUpload}
+    disabled={uploading}
+    style={{
+      padding: "6px 12px",
+      cursor: uploading ? "not-allowed" : "pointer",
+      borderRadius: 4,
+      fontWeight: "bold",
+      border: "2px solid #222",
+      background: uploading ? "#ccc" : "#ffcc00",
+    }}
+  >
+    {uploading ? "전송 중..." : "업로드"}
+  </button>
+</div>
+
+{/* 진행률 바 */}
+{uploading && (
+  <div
+    style={{
+      width: "100%",
+      background: "#ddd",
+      borderRadius: 4,
+      height: 20,
+      marginBottom: 10,
+      position: "relative",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        width: `${uploadProgress}%`,
+        height: "100%",
+        background: "#007bff",
+        transition: "width 0.3s ease",
+      }}
+    />
+    <span
+      style={{
+        position: "absolute",
+        top: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        fontSize: 12,
+        fontWeight: "bold",
+        color: "#fff",
+      }}
+    >
+      {uploadProgress}%
+    </span>
+  </div>
+)}
+
+{/* 섬네일 */}
+<div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+  {images.map((img, i) => (
+    <div key={i} style={{ position: "relative" }}>
+      <img
+        src={img.url}
+        alt={`thumbnail-${i}`}
+        onClick={() => setPreviewIndex(i)}
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 6,
-          marginBottom: 10,
-          alignItems: "center",
+          width: 80,
+          height: 80,
+          objectFit: "cover",
+          border: previewIndex === i ? "3px solid #007bff" : "2px solid #222",
+          borderRadius: 8,
+          cursor: "pointer",
+        }}
+      />
+      <button
+        onClick={() => handleDelete(i)}
+        style={{
+          position: "absolute",
+          top: -6,
+          right: -6,
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          backgroundColor: "#ff4d4f",
+          color: "#fff",
+          border: "none",
+          fontSize: 14,
+          cursor: "pointer",
+          fontWeight: "bold",
         }}
       >
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleImageChange}
-          style={{
-            flex: "1 1 200px",
-            height: 34,
-            padding: "2px 6px",
-            fontSize: 14,
-            borderRadius: 4,
-            border: "2px solid #222",
-            color: "#000",
-            fontWeight: "bold",
-            background: "#ffcc00",
-            cursor: "pointer",
-          }}
-        />
-        <button
-          onClick={handleUpload}
-          disabled={uploading}
-          style={{
-            flex: "0 1 100px",
-            height: 34,
-            padding: "2px 6px",
-            cursor: uploading ? "not-allowed" : "pointer",
-            borderRadius: 4,
-            fontWeight: "bold",
-            border: "2px solid #222",
-            background: uploading ? "#ccc" : "#ffcc00",
-          }}
-        >
-          {uploading ? "전송 중..." : "업로드"}
-        </button>
-      </div>
+        ×
+      </button>
+    </div>
+  ))}
+</div>
 
-      {/* 진행률 바 */}
-      {uploading && (
-        <div
-          style={{
-            width: "100%",
-            background: "#ddd",
-            borderRadius: 4,
-            height: 20,
-            marginBottom: 10,
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: `${uploadProgress}%`,
-              height: "100%",
-              background: "#007bff",
-              transition: "width 0.3s ease",
-            }}
-          />
-          <span
-            style={{
-              position: "absolute",
-              top: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              fontSize: 12,
-              fontWeight: "bold",
-              color: "#fff",
-            }}
-          >
-            {uploadProgress}%
-          </span>
-        </div>
-      )}
-
-      {/* 이미지 미리보기 */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-        {images.map((img, i) => (
-          <div key={i} style={{ position: "relative" }}>
-            <img
-              src={URL.createObjectURL(img)}
-              alt={`thumbnail-${i}`}
-              onClick={() => setPreviewIndex(i)}
-              style={{
-                width: 80,
-                height: 80,
-                objectFit: "cover",
-                border:
-                  previewIndex === i ? "3px solid #007bff" : "2px solid #222",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            />
-            <button
-              onClick={() => handleDelete(i)}
-              style={{
-                position: "absolute",
-                top: -6,
-                right: -6,
-                width: 20,
-                height: 20,
-                borderRadius: "50%",
-                backgroundColor: "#ff4d4f",
-                color: "#fff",
-                border: "none",
-                fontSize: 14,
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {images[previewIndex] && (
-        <ImageCanvas
-          image={images[previewIndex]}
-          entries={entries}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-        />
-      )}
+{/* 합성 이미지 미리보기 */}
+{images[previewIndex] && (
+  <ImageCanvas
+    image={images[previewIndex].file}
+    entries={entries}
+    canvasWidth={canvasWidth}
+    canvasHeight={canvasHeight}
+  />
+)}
     </div>
   );
 }

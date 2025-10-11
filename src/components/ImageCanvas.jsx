@@ -7,10 +7,11 @@ export default function ImageCanvas({ image, entries, canvasWidth, canvasHeight 
   useEffect(() => {
     if (!canvasRef.current || !image) return;
     const ctx = canvasRef.current.getContext("2d");
+    const imgObj = new Image();
 
     const drawImageWithTable = (img, entries) => {
       const canvas = canvasRef.current;
-      canvas.width = canvasWidth;   // 업로드용 고정 크기
+      canvas.width = canvasWidth; 
       canvas.height = canvasHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -50,9 +51,13 @@ export default function ImageCanvas({ image, entries, canvasWidth, canvasHeight 
       });
     };
 
-    const imgObj = new Image();
     imgObj.onload = () => drawImageWithTable(imgObj, entries);
     imgObj.src = URL.createObjectURL(image);
+
+    // ⭐️ 메모리 누수 방지를 위한 cleanup 함수
+    return () => {
+      URL.revokeObjectURL(imgObj.src);
+    };
   }, [image, entries, canvasWidth, canvasHeight]);
 
   return (
