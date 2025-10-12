@@ -4,7 +4,7 @@ export const canvasConfig = {
   height: 1000,
   table: {
     widthRatio: 1/3,
-    heightRatio: 1/3,
+    heightRatio: 2/7,
     backgroundColor: "#fff",
     borderColor: "rgba(0,0,0,0.3)",
     borderWidth: 1,

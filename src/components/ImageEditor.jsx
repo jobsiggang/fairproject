@@ -221,6 +221,9 @@ const saveButtonStyle = {
           alignItems: "center",
           marginBottom: 15,
           flexWrap: "wrap",
+          color: "#000",
+          fontWeight: "bold",
+
           gap: 8,
         }}
       >
@@ -230,7 +233,7 @@ const saveButtonStyle = {
             localStorage.removeItem("authorName");
             router.push("/");
           }}
-          style={{ ...buttonStyle, background: "#ddd", color: "#000" }}
+          style={{ background: "#ddd", color: "#000" }}
         >
           로그아웃
         </button>
@@ -242,8 +245,9 @@ const saveButtonStyle = {
           value={selectedForm}
           onChange={(e) => setSelectedForm(e.target.value)}
           style={{
+            color: "#000",
             flex: "1 1 200px",
-            height: 44,
+            height: 36,
             borderRadius: 8,
             border: "2px solid #222",
             background: "#ffcc00",
