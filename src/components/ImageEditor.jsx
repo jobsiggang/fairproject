@@ -6,6 +6,8 @@ import InputForm from "./InputForm";
 import ImageCanvas from "./ImageCanvas";
 import { fetchSheetData } from "@/lib/googleSheet";
 import { uploadPhoto } from "@/lib/googleDrive";
+import toast from "react-hot-toast";
+import { createCompositeImage } from "@/lib/createComposite";
 
 export default function ImageEditor({ author }) {
   const router = useRouter();
@@ -22,22 +24,23 @@ export default function ImageEditor({ author }) {
   const [images, setImages] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false); // 💾 저장 상태
+  const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // 공통 버튼 스타일
+  // 🎨 공통 버튼 스타일
   const buttonStyle = {
     color: "#000",
-    height: 34,
-    padding: "2px 6px",
+    height: 36,
+    padding: "4px 10px",
     cursor: "pointer",
-    borderRadius: 4,
+    borderRadius: 6,
     fontWeight: "bold",
     border: "2px solid #222",
     background: "#ffcc00",
+    transition: "0.2s",
   };
 
-  // 시트 데이터 로드
+  // 📋 시트 데이터 로드
   useEffect(() => {
     const fetchData = async () => {
       const sites = await fetchSheetData("현장목록");
@@ -64,8 +67,8 @@ export default function ImageEditor({ author }) {
     setEntries(newEntries);
   };
 
-  // 파일 선택/촬영 처리 (최대 10개)
-  const handleCapture = (e) => {
+  // 📸 파일 선택/촬영 공통 함수
+  const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
@@ -85,64 +88,9 @@ export default function ImageEditor({ author }) {
 
   const allRequiredFilled = () => entries.every((e) => e.value && e.value.trim() !== "");
 
-  const createCompositeImage = async (file, entries) => {
-    return new Promise((resolve, reject) => {
-      const imgObj = new Image();
-      imgObj.onload = () => {
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = canvasWidth;
-          canvas.height = canvasHeight;
-          const ctx = canvas.getContext("2d");
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height);
-
-          const tableWidth = canvas.width / 3;
-          const tableHeight = canvas.height / 3;
-          const tableX = 0,
-            tableY = canvas.height - tableHeight;
-
-          ctx.fillStyle = "#fff";
-          ctx.fillRect(tableX, tableY, tableWidth, tableHeight);
-          ctx.strokeStyle = "rgba(0,0,0,0.3)";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(tableX, tableY, tableWidth, tableHeight);
-
-          const rowHeight = tableHeight / entries.length;
-          const col1Width = tableWidth * 0.4;
-          ctx.font = "bold 25px 'Malgun Gothic'";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = "#000";
-
-          entries.forEach((entry, i) => {
-            const y = tableY + i * rowHeight;
-            ctx.beginPath();
-            ctx.moveTo(tableX, y);
-            ctx.lineTo(tableX + tableWidth, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(tableX + col1Width, y);
-            ctx.lineTo(tableX + col1Width, y + rowHeight);
-            ctx.stroke();
-
-            const displayValue = entry.field === "일자" ? entry.value.replace(/-/g, ".") : entry.value;
-
-            ctx.fillText(entry.field, tableX + 6, y + rowHeight / 2);
-            ctx.fillText(displayValue, tableX + col1Width + 6, y + rowHeight / 2);
-          });
-
-          resolve(canvas);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      imgObj.onerror = reject;
-      imgObj.src = URL.createObjectURL(file);
-    });
-  };
-
-  // 업로드
+  
+  
+  // 🚀 업로드
   const handleUpload = async () => {
     if (!allRequiredFilled()) return alert("모든 입력 필드는 필수입니다.");
     if (!images.length) return alert("이미지를 선택하세요.");
@@ -159,7 +107,6 @@ export default function ImageEditor({ author }) {
 
     for (let i = 0; i < total; i++) {
       const { file } = images[i];
-
       try {
         const canvas = await createCompositeImage(file, entries);
         const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
@@ -171,26 +118,26 @@ export default function ImageEditor({ author }) {
         progress = Math.round(((i + 1) / total) * 100);
         setUploadProgress(progress);
       } catch (err) {
-        console.error("업로드 중 오류:", err);
-        alert(`❌ 업로드 실패 (${images[i].file.name}): ${err.message}`);
+        alert(`❌ 업로드 실패: ${err.message}`);
         setUploading(false);
-        setUploadProgress(progress);
         return;
       }
     }
 
-    images.forEach((img) => URL.revokeObjectURL(img.url));
     setUploadProgress(100);
     setTimeout(() => {
       setUploading(false);
-      alert("✅ 모든 이미지 업로드 완료!");
+      toast.success("✅ 모든 이미지 업로드 완료!");
     }, 500);
   };
 
-  // 휴대폰 저장
+  // 💾 저장 (여러 장 순차 저장 + confirm)
   const handleSaveComposite = async () => {
     if (!allRequiredFilled()) return alert("모든 입력 필드는 필수입니다.");
     if (!images.length) return alert("이미지를 선택하세요.");
+
+    const confirmSave = confirm("📸 선택한 모든 이미지를 합성하여 저장할까요?");
+    if (!confirmSave) return;
 
     setSaving(true);
     try {
@@ -198,13 +145,14 @@ export default function ImageEditor({ author }) {
         const canvas = await createCompositeImage(images[i].file, entries);
         const link = document.createElement("a");
         link.href = canvas.toDataURL("image/jpeg");
-        link.download = `합성_${Date.now()}_${i}.jpg`;
+        link.download = `합성_${Date.now()}_${i + 1}.jpg`;
         link.click();
+        await new Promise((r) => setTimeout(r, 300)); // 지연
       }
-      alert("✅ 모든 이미지 저장 완료!");
+      toast.success("✅ 모든 합성 이미지가 저장되었습니다!");
     } catch (err) {
       console.error("합성 이미지 저장 오류:", err);
-      alert("❌ 합성 이미지 저장 실패");
+      alert("❌ 저장 실패");
     } finally {
       setSaving(false);
     }
@@ -218,48 +166,60 @@ export default function ImageEditor({ author }) {
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: "돋움", backgroundColor: "#f0f0f0", minHeight: "100vh" }}>
-      {/* 헤더 */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", marginBottom: 20 }}>
-        <h2 style={{ fontSize: "clamp(18px, 5vw, 22px)", color: "#000", margin: 0 }}>
-          🏗️ 공정한 Works 💞 {author}
-        </h2>
+    <div style={{ padding: 20, backgroundColor: "#f7f7f7", minHeight: "100vh", fontFamily: "돋움" }}>
+      {/* 제목 + 사용자 + 로그아웃 */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
+        <h2 style={{ fontSize: 20, margin: 0 }}>🏗️ 공정한 Works 💞 {author}</h2>
         <button
           onClick={() => {
             localStorage.removeItem("authorName");
             router.push("/");
           }}
-          style={{ marginBottom: 6, padding: "4px 8px", fontSize: 12, borderRadius: 4, background: "#ddd", cursor: "pointer", border: "1px solid #ccc", fontWeight: "bold" }}
+          style={{ ...buttonStyle, background: "#ddd" }}
         >
           로그아웃
         </button>
       </div>
 
-      {/* 양식 선택 */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+      {/* 양식 선택 + 가져오기 */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         <select
           value={selectedForm}
           onChange={(e) => setSelectedForm(e.target.value)}
-          style={{ flex: "1 1 200px", height: 34, padding: "2px 6px", fontSize: 14, borderRadius: 4, border: "2px solid #222", color: "#000", fontWeight: "bold", background: "#ffcc00" }}
+          style={{ flex: "1 1 200px", height: 36, borderRadius: 6, border: "2px solid #222", background: "#ffcc00", fontWeight: "bold" }}
         >
           <option value="">--입력 양식 선택--</option>
           {formList.map((f) => (
             <option key={f} value={f}>{f}</option>
           ))}
         </select>
-        <button onClick={handleLoadForm} style={buttonStyle}>가져오기</button>
+        <button onClick={handleLoadForm} style={buttonStyle}>양식 가져오기</button>
       </div>
 
-      {/* 입력폼 */}
+      {/* 입력 폼 */}
       <InputForm entries={entries} setEntries={setEntries} siteData={siteData} />
 
-      {/* 사진 버튼 */}
-      <div style={{ marginTop: 20, display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <input type="file" accept="image/*" capture="environment" multiple onChange={handleCapture} style={{ display: "none" }} id="cameraInput" />
-        <button onClick={() => document.getElementById("cameraInput").click()} style={buttonStyle}>📸 사진 찍기</button>
+        {/* 진행률 바 */}
+        {uploading && (
+          <div style={{ width: "100%", background: "#ddd", height: 20, marginTop: 10, borderRadius: 4 }}>
+            <div style={{ width: `${uploadProgress}%`, height: "100%", background: "#007bff", transition: "width 0.3s" }} />
+          </div>
+        )}
+      {/* 📸 사진 버튼 */}
+      <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <input id="cameraInput" type="file" accept="image/*" capture="environment" multiple onChange={handleFileSelect} style={{ display: "none" }} />
+        <button disabled={uploading || saving} onClick={() => document.getElementById("cameraInput").click()} style={buttonStyle}>📸 사진 찍기</button>
 
-        <input type="file" accept="image/*" multiple onChange={handleCapture} style={{ display: "none" }} id="galleryInput" />
-        <button onClick={() => document.getElementById("galleryInput").click()} style={buttonStyle}>🖼️ 사진 선택</button>
+        <input id="galleryInput" type="file" accept="image/*" multiple onChange={handleFileSelect} style={{ display: "none" }} />
+        <button disabled={uploading || saving} onClick={() => document.getElementById("galleryInput").click()} style={buttonStyle}>🖼️ 사진 선택</button>
+
+        <button disabled={uploading || saving} onClick={handleUpload} style={buttonStyle}>
+          {uploading ? "전송 중..." : "🚀 사진 전송"}
+        </button>
+
+        <button disabled={uploading || saving} onClick={handleSaveComposite} style={buttonStyle}>
+          {saving ? "저장 중..." : "💾 휴대폰 저장"}
+        </button>
       </div>
 
       {/* 섬네일 */}
@@ -268,59 +228,44 @@ export default function ImageEditor({ author }) {
           <div key={i} style={{ position: "relative" }}>
             <img
               src={img.url}
-              alt={`thumbnail-${i}`}
+              alt={`thumb-${i}`}
               onClick={() => setPreviewIndex(i)}
               style={{
                 width: 80,
                 height: 80,
                 objectFit: "cover",
                 border: previewIndex === i ? "3px solid #007bff" : "2px solid #222",
-                borderRadius: 8,
+                borderRadius: 6,
                 cursor: "pointer",
               }}
             />
-            <button onClick={() => handleDelete(i)} style={{
-              position: "absolute",
-              top: -6,
-              right: -6,
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              backgroundColor: "#ff4d4f",
-              color: "#fff",
-              border: "none",
-              fontSize: 14,
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}>×</button>
+            <button
+              onClick={() => handleDelete(i)}
+              style={{
+                position: "absolute",
+                top: -6,
+                right: -6,
+                background: "#ff4d4f",
+                border: "none",
+                color: "#fff",
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>
 
-      {/* 합성 이미지 미리보기 */}
+      {/* 미리보기 */}
       {images[previewIndex] && (
         <ImageCanvas image={images[previewIndex].file} entries={entries} canvasWidth={canvasWidth} canvasHeight={canvasHeight} />
       )}
 
-      {/* 업로드/저장 버튼 */}
-      <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button onClick={handleUpload} disabled={uploading || saving} style={buttonStyle}>
-          {uploading ? "전송 중..." : "🚀 사진 전송"}
-        </button>
-        <button onClick={handleSaveComposite} disabled={uploading || saving} style={buttonStyle}>
-          {saving ? "저장 중..." : "💾 휴대폰 저장"}
-        </button>
-      </div>
-
-      {/* 진행률 바 */}
-      {uploading && (
-        <div style={{ width: "100%", background: "#ddd", borderRadius: 4, height: 20, marginTop: 10, position: "relative", overflow: "hidden" }}>
-          <div style={{ width: `${uploadProgress}%`, height: "100%", background: "#007bff", transition: "width 0.3s ease" }} />
-          <span style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", fontSize: 12, fontWeight: "bold", color: "#fff" }}>
-            {uploadProgress}%
-          </span>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,75 +1,52 @@
 "use client";
-import React, { useRef, useEffect } from "react";
 
-export default function ImageCanvas({ image, entries, canvasWidth, canvasHeight }) {
+import React, { useEffect, useRef, useState } from "react";
+import { createCompositeImage } from "@/lib/createComposite";
+
+export default function ImageCanvas({ image, entries, canvasWidth = 1200, canvasHeight = 1000 }) {
   const canvasRef = useRef(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!canvasRef.current || !image) return;
-    const ctx = canvasRef.current.getContext("2d");
-    const imgObj = new Image();
+    if (!image) return;
 
-    const drawImageWithTable = (img, entries) => {
-      const canvas = canvasRef.current;
-      canvas.width = canvasWidth; 
-      canvas.height = canvasHeight;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    setLoading(true);
+    let isMounted = true;
 
-      // 테이블 그리기
-      const tableWidth = canvas.width / 3;
-      const tableHeight = canvas.height / 3;
-      const tableX = 0;
-      const tableY = canvas.height - tableHeight;
+    // 미리보기용 캔버스 생성
+    const drawPreview = async () => {
+      try {
+        const canvas = await createCompositeImage(image, entries);
+        if (!isMounted) return;
 
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(tableX, tableY, tableWidth, tableHeight);
-      ctx.strokeStyle = "rgba(0,0,0,0.3)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(tableX, tableY, tableWidth, tableHeight);
+        const previewCanvas = canvasRef.current;
+        const ctx = previewCanvas.getContext("2d");
 
-      const rowHeight = tableHeight / entries.length;
-      const col1Width = tableWidth * 0.4;
+        // 캔버스 크기 맞춤
+        previewCanvas.width = canvas.width;
+        previewCanvas.height = canvas.height;
 
-      entries.forEach((entry, i) => {
-        const y = tableY + i * rowHeight;
-        ctx.beginPath();
-        ctx.moveTo(tableX, y);
-        ctx.lineTo(tableX + tableWidth, y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(tableX + col1Width, y);
-        ctx.lineTo(tableX + col1Width, y + rowHeight);
-        ctx.stroke();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(canvas, 0, 0);
 
-        ctx.fillStyle = "#000";
-        ctx.font = "bold 25px 'Malgun Gothic'";
-        ctx.textBaseline = "middle";
-        const displayValue = entry.field === "일자" ? entry.value.replace(/-/g, ".") : entry.value;
-        ctx.fillText(entry.field, tableX + 4, y + rowHeight / 2);
-        ctx.fillText(displayValue, tableX + col1Width + 4, y + rowHeight / 2);
-      });
+      } catch (err) {
+        console.error("미리보기 생성 오류:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
 
-    imgObj.onload = () => drawImageWithTable(imgObj, entries);
-    imgObj.src = URL.createObjectURL(image);
+    drawPreview();
 
-    // ⭐️ 메모리 누수 방지를 위한 cleanup 함수
     return () => {
-      URL.revokeObjectURL(imgObj.src);
+      isMounted = false;
     };
-  }, [image, entries, canvasWidth, canvasHeight]);
+  }, [image, entries]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        width: "100%",
-        height: "auto",
-        border: "2px solid #222",
-        borderRadius: 10,
-        boxShadow: "2px 2px 8px rgba(0,0,0,0.3)",
-      }}
-    />
+    <div style={{ marginTop: 20 }}>
+      {loading && <div style={{ fontSize: 14, color: "#555" }}>미리보기 생성 중...</div>}
+      <canvas ref={canvasRef} style={{ width: "100%", border: "2px solid #222", borderRadius: 8 }} />
+    </div>
   );
 }

@@ -2,12 +2,15 @@
 import React from "react";
 
 export default function InputForm({ entries, setEntries, siteData }) {
-  // 오늘 날짜를 yyyy-MM-dd 형식으로 반환하는 함수
+  // 오늘 날짜를 yyyy-MM-dd 형식으로 반환하는 함수 (한국 시간 기준)
   const getToday = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
+    const now = new Date();
+    const kstOffset = 9 * 60; // UTC+9
+    const localOffset = now.getTimezoneOffset();
+    const kstTime = new Date(now.getTime() + (kstOffset + localOffset) * 60000);
+    const yyyy = kstTime.getFullYear();
+    const mm = String(kstTime.getMonth() + 1).padStart(2, "0");
+    const dd = String(kstTime.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   };
 
@@ -20,6 +23,18 @@ export default function InputForm({ entries, setEntries, siteData }) {
   const handleValueChange = (key, newValue) => {
     setEntries((prev) =>
       prev.map((e) => (e.key === key ? { ...e, value: newValue } : e))
+    );
+  };
+
+  // 엔트리를 떠날 때 실행: 위치 자동 변환
+  const handleValueBlur = (key) => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.key === key && e.field === "위치") {
+          return { ...e, value: e.value.replace(/(\d+)-(\d+)/g, "$1동$2호") };
+        }
+        return e;
+      })
     );
   };
 
@@ -90,6 +105,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
               value={entry.value}
               placeholder={entry.field}
               onChange={(e) => handleValueChange(entry.key, e.target.value)}
+              onBlur={() => handleValueBlur(entry.key)} // 위치 자동 변환 적용
             />
           )}
         </div>
