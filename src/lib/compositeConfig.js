@@ -10,6 +10,6 @@ export const canvasConfig = {
     borderWidth: 1,
     font: "bold 25px 'Malgun Gothic'",
     textColor: "#000",
-    col1Ratio: 0.4
+    col1Ratio: 0.30
   }
 };
