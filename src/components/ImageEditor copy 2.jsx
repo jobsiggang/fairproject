@@ -24,29 +24,24 @@ export default function ImageEditor({ author }) {
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // 🎨 공통 버튼 스타일 (모바일 터치 최적화)
- // 기존 코드에서 진행바, 버튼 스타일, 저장 버튼만 수정
-const buttonStyle = {
-  color: "#000",
-  height: 36,           // 버튼 높이 줄임
-  padding: "6px 12px",
-  cursor: "pointer",
-  borderRadius: 6,
-  fontWeight: "bold",
-  border: "2px solid #222",
-  background: "#ffcc00",
-  transition: "0.2s",
-  flex: "1 1 auto",
-};
+  // 🎨 공통 버튼 스타일
+  const buttonStyle = {
+    color: "#000",
+    height: 36,
+    padding: "4px 10px",
+    cursor: "pointer",
+    borderRadius: 6,
+    fontWeight: "bold",
+    border: "2px solid #222",
+    background: "#ffcc00",
+    transition: "0.2s",
+  };
 
-const saveButtonStyle = {
-  ...buttonStyle,
-  background: "#00cc88", // 저장 버튼 색 변경
-  color: "#fff",
-  opacity: 0.9,
-  marginLeft: 5,
-};
-
+  const saveButtonStyle = {
+    ...buttonStyle,
+    opacity: 0.5, // 흐리게
+    marginLeft: 10,
+  };
 
   // 📋 시트 데이터 로드
   useEffect(() => {
@@ -142,7 +137,10 @@ const saveButtonStyle = {
     entries.forEach((e) => (entryData[e.field] = e.value));
     entryData["작성자"] = author;
 
-    for (let i = 0; i < images.length; i++) {
+    let progress = 0;
+    const total = images.length;
+
+    for (let i = 0; i < total; i++) {
       const { file } = images[i];
       try {
         const canvas = await createCompositeImage(file, entries);
@@ -152,7 +150,7 @@ const saveButtonStyle = {
         const res = await uploadPhoto(base64, filename, entryData);
         if (!res.success) throw new Error(res.error || "업로드 실패");
 
-        const progress = Math.round(((i + 1) / images.length) * 100);
+        progress = Math.round(((i + 1) / total) * 100);
         setUploadProgress(progress);
       } catch (err) {
         toast.error(`❌ 업로드 실패: ${err.message}`);
@@ -203,34 +201,16 @@ const saveButtonStyle = {
   };
 
   return (
-    <div
-      style={{
-        padding: 16,
-        backgroundColor: "#f7f7f7",
-        minHeight: "100vh",
-        fontFamily: "돋움",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div style={{ padding: 20, backgroundColor: "#f7f7f7", minHeight: "100vh", fontFamily: "돋움" }}>
       {/* 제목 + 사용자 + 로그아웃 */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 15,
-          flexWrap: "wrap",
-          gap: 8,
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
         <h2 style={{ fontSize: 20, margin: 0 }}>🏗️ 공정한 Works 💞 {author}</h2>
         <button
           onClick={() => {
             localStorage.removeItem("authorName");
             router.push("/");
           }}
-          style={{ ...buttonStyle, background: "#ddd", color: "#000" }}
+          style={{ ...buttonStyle, background: "#ddd" }}
         >
           로그아웃
         </button>
@@ -243,8 +223,8 @@ const saveButtonStyle = {
           onChange={(e) => setSelectedForm(e.target.value)}
           style={{
             flex: "1 1 200px",
-            height: 44,
-            borderRadius: 8,
+            height: 36,
+            borderRadius: 6,
             border: "2px solid #222",
             background: "#ffcc00",
             fontWeight: "bold",
@@ -252,14 +232,10 @@ const saveButtonStyle = {
         >
           <option value="">--입력 양식 선택--</option>
           {formList.map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
+            <option key={f} value={f}>{f}</option>
           ))}
         </select>
-        <button onClick={handleLoadForm} style={buttonStyle}>
-          양식 가져오기
-        </button>
+        <button onClick={handleLoadForm} style={buttonStyle}>양식 가져오기</button>
       </div>
 
       {/* 입력 폼 */}
@@ -267,66 +243,18 @@ const saveButtonStyle = {
 
       {/* 진행률 바 */}
       {uploading && (
-  <div style={{ width: "100%", background: "#ddd", height: 20, marginTop: 10, borderRadius: 4, position: "relative" }}>
-    <div
-      style={{
-        width: `${uploadProgress}%`,
-        height: "100%",
-        background: "#007bff",
-        transition: "width 0.3s",
-        borderRadius: 4,
-      }}
-    />
-    <span
-      style={{
-        position: "absolute",
-        left: "50%",
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-        fontWeight: "bold",
-        color: "#fff",
-        fontSize: 12,
-      }}
-    >
-      {uploadProgress}%
-    </span>
-  </div>
-)}
+        <div style={{ width: "100%", background: "#ddd", height: 20, marginTop: 10, borderRadius: 4 }}>
+          <div style={{ width: `${uploadProgress}%`, height: "100%", background: "#007bff", transition: "width 0.3s" }} />
+        </div>
+      )}
 
       {/* 📸 사진 버튼 */}
-      <div style={{ marginTop: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <input
-          id="cameraInput"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: "none" }}
-        />
-        <button
-          disabled={uploading || saving}
-          onClick={() => document.getElementById("cameraInput").click()}
-          style={buttonStyle}
-        >
-          📸 사진 찍기
-        </button>
+      <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <input id="cameraInput" type="file" accept="image/*" capture="environment" multiple onChange={handleFileSelect} style={{ display: "none" }} />
+        <button disabled={uploading || saving} onClick={() => document.getElementById("cameraInput").click()} style={buttonStyle}>📸 사진 찍기</button>
 
-        <input
-          id="galleryInput"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: "none" }}
-        />
-        <button
-          disabled={uploading || saving}
-          onClick={() => document.getElementById("galleryInput").click()}
-          style={buttonStyle}
-        >
-          🖼️ 사진 선택
-        </button>
+        <input id="galleryInput" type="file" accept="image/*" multiple onChange={handleFileSelect} style={{ display: "none" }} />
+        <button disabled={uploading || saving} onClick={() => document.getElementById("galleryInput").click()} style={buttonStyle}>🖼️ 사진 선택</button>
 
         <button disabled={uploading || saving} onClick={handleUpload} style={buttonStyle}>
           {uploading ? "전송 중..." : "🚀 사진 전송"}

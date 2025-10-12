@@ -2,7 +2,7 @@
 import React from "react";
 
 export default function InputForm({ entries, setEntries, siteData }) {
-  // 오늘 날짜를 yyyy-MM-dd 형식으로 반환하는 함수 (한국 시간 기준)
+  // 오늘 날짜를 yyyy-MM-dd 형식으로 반환 (한국 시간 기준)
   const getToday = () => {
     const now = new Date();
     const kstOffset = 9 * 60; // UTC+9
@@ -14,19 +14,12 @@ export default function InputForm({ entries, setEntries, siteData }) {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  const handleFieldChange = (key, newField) => {
-    setEntries((prev) =>
-      prev.map((e) => (e.key === key ? { ...e, field: newField } : e))
-    );
-  };
-
   const handleValueChange = (key, newValue) => {
     setEntries((prev) =>
       prev.map((e) => (e.key === key ? { ...e, value: newValue } : e))
     );
   };
 
-  // 엔트리를 떠날 때 실행: 위치 자동 변환
   const handleValueBlur = (key) => {
     setEntries((prev) =>
       prev.map((e) => {
@@ -62,54 +55,71 @@ export default function InputForm({ entries, setEntries, siteData }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
-      {entries.map((entry) => (
-        <div
-          key={entry.key}
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            border: "1px solid #ccc",
-            borderRadius: 6,
-            padding: 4,
-            backgroundColor: "#fff",
-          }}
-        >
-          <input
-            style={fieldInputStyle}
-            value={entry.field}
-            readOnly // 필드명 변경 불가
-          />
+      {entries.map((entry) => {
+        const options = siteData.map((d) => d[entry.field]).filter(Boolean);
+        const hasOptions = options.length > 0;
 
-          {siteData.some(d => d.hasOwnProperty(entry.field)) ? (
-            <select
-              style={valueInputStyle}
-              value={entry.value}
-              onChange={(e) => handleValueChange(entry.key, e.target.value)}
-            >
-              <option value="">선택</option>
-              {[...new Set(siteData.map(d => d[entry.field]).filter(Boolean))].map((val) => (
-                <option key={val} value={val}>{val}</option>
-              ))}
-            </select>
-          ) : entry.field === "일자" ? (
+        return (
+          <div
+            key={entry.key}
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              border: "1px solid #ccc",
+              borderRadius: 6,
+              padding: 4,
+              backgroundColor: "#fff",
+            }}
+          >
             <input
-              type="date"
-              style={valueInputStyle}
-              value={entry.value || getToday()} // 오늘 날짜 기본값
-              onChange={(e) => handleValueChange(entry.key, e.target.value)}
+              style={fieldInputStyle}
+              value={entry.field}
+              readOnly
             />
-          ) : (
-            <input
-              style={valueInputStyle}
-              value={entry.value}
-              placeholder={entry.field}
-              onChange={(e) => handleValueChange(entry.key, e.target.value)}
-              onBlur={() => handleValueBlur(entry.key)} // 위치 자동 변환 적용
-            />
-          )}
-        </div>
-      ))}
+
+            {entry.field === "일자" ? (
+              <input
+                type="date"
+                style={valueInputStyle}
+                value={entry.value} // 양식 가져오기 시 이미 value에 today가 들어감
+                onChange={(e) => handleValueChange(entry.key, e.target.value)}
+              />
+            ) : entry.field === "위치" ? (
+              <input
+                style={valueInputStyle}
+                value={entry.value}
+                placeholder="123-345"
+                onChange={(e) => handleValueChange(entry.key, e.target.value)}
+                onBlur={() => handleValueBlur(entry.key)}
+              />
+            ) : hasOptions ? (
+              <>
+                <input
+                  list={`datalist-${entry.key}`}
+                  style={valueInputStyle}
+                  value={entry.value}
+                  onChange={(e) => handleValueChange(entry.key, e.target.value)}
+                  onBlur={() => handleValueBlur(entry.key)}
+                />
+                <datalist id={`datalist-${entry.key}`}>
+                  {[...new Set(options)].map((val) => (
+                    <option key={val} value={val} />
+                  ))}
+                </datalist>
+              </>
+            ) : (
+              <input
+                style={valueInputStyle}
+                value={entry.value}
+                placeholder={entry.field}
+                onChange={(e) => handleValueChange(entry.key, e.target.value)}
+                onBlur={() => handleValueBlur(entry.key)}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

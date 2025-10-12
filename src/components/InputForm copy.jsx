@@ -1,13 +1,16 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 
 export default function InputForm({ entries, setEntries, siteData }) {
-  // 오늘 날짜를 yyyy-MM-dd 형식으로 반환하는 함수
+  // 오늘 날짜를 yyyy-MM-dd 형식으로 반환하는 함수 (한국 시간 기준)
   const getToday = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
+    const now = new Date();
+    const kstOffset = 9 * 60; // UTC+9
+    const localOffset = now.getTimezoneOffset();
+    const kstTime = new Date(now.getTime() + (kstOffset + localOffset) * 60000);
+    const yyyy = kstTime.getFullYear();
+    const mm = String(kstTime.getMonth() + 1).padStart(2, "0");
+    const dd = String(kstTime.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   };
 
@@ -23,39 +26,16 @@ export default function InputForm({ entries, setEntries, siteData }) {
     );
   };
 
-  const moveEntry = (index, direction) => {
-    setEntries((prev) => {
-      const newEntries = [...prev];
-      const targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= newEntries.length) return prev;
-      [newEntries[index], newEntries[targetIndex]] = [
-        newEntries[targetIndex],
-        newEntries[index],
-      ];
-      return newEntries;
-    });
-  };
-
-  const removeEntry = (key) =>
-    setEntries((prev) => prev.filter((e) => e.key !== key));
-
-  const addEntry = () => {
-    const newKey = Date.now() + Math.random();
-    setEntries((prev) => [
-      ...prev,
-      { key: newKey, field: "새 항목", value: "" },
-    ]);
-  };
-
-  const smallButton = {
-    background: "#ddd",
-    border: "1px solid #ccc",
-    borderRadius: "6px",
-    padding: "2px 4px",
-    fontSize: "12px",
-    cursor: "pointer",
-    marginLeft: "4px",
-    fontWeight: "bold",
+  // 엔트리를 떠날 때 실행: 위치 자동 변환
+  const handleValueBlur = (key) => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.key === key && e.field === "위치") {
+          return { ...e, value: e.value.replace(/(\d+)-(\d+)/g, "$1동$2호") };
+        }
+        return e;
+      })
+    );
   };
 
   const fieldInputStyle = {
@@ -80,24 +60,9 @@ export default function InputForm({ entries, setEntries, siteData }) {
     fontWeight: "bold",
   };
 
-  const addButtonStyle = {
-    marginBottom: 6,
-    padding: "2px 6px",
-    fontSize: 12,
-    borderRadius: 4,
-    background: "#ddd",
-    cursor: "pointer",
-    border: "1px solid #ccc",
-    fontWeight: "bold",
-    alignSelf: "flex-start",
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
-      {/* + 항목 추가 버튼 맨 위로 */}
-      <button style={addButtonStyle} onClick={addEntry}>+ 항목 추가</button>
-
-      {entries.map((entry, idx) => (
+      {entries.map((entry) => (
         <div
           key={entry.key}
           style={{
@@ -113,7 +78,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
           <input
             style={fieldInputStyle}
             value={entry.field}
-            onChange={(e) => handleFieldChange(entry.key, e.target.value)}
+            readOnly // 필드명 변경 불가
           />
 
           {siteData.some(d => d.hasOwnProperty(entry.field)) ? (
@@ -140,14 +105,9 @@ export default function InputForm({ entries, setEntries, siteData }) {
               value={entry.value}
               placeholder={entry.field}
               onChange={(e) => handleValueChange(entry.key, e.target.value)}
+              onBlur={() => handleValueBlur(entry.key)} // 위치 자동 변환 적용
             />
           )}
-
-          <div style={{ display: "flex", marginLeft: "auto", marginTop: 2 }}>
-            <button style={smallButton} onClick={() => moveEntry(idx, -1)}>▲</button>
-            <button style={smallButton} onClick={() => moveEntry(idx, 1)}>▼</button>
-            {idx >= 2 && <button style={smallButton} onClick={() => removeEntry(entry.key)}>삭제</button>}
-          </div>
         </div>
       ))}
     </div>

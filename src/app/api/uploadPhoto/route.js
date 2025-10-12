@@ -19,8 +19,8 @@ export async function POST(req) {
     if (uploadList.length === 0) throw new Error("업로드할 데이터가 없습니다.");
 
     const firstEntry = uploadList[0].entryData;
-    if (!firstEntry || !firstEntry["작성자"] || !firstEntry["현장명"]) {
-      throw new Error("작성자 또는 현장명 정보가 누락되었습니다.");
+    if (!firstEntry || !firstEntry["작성자"] ) {
+      throw new Error("작성자 정보가 누락되었습니다.");
     }
 
     const authorName = firstEntry["작성자"];
@@ -37,11 +37,11 @@ export async function POST(req) {
     // ⚡ 여러 장의 이미지를 순차적으로 업로드
     const results = [];
     for (const { base64, filename, entryData } of uploadList) {
-      if (!entryData || !entryData["작성자"] || !entryData["현장명"]) {
+      if (!entryData || !entryData["작성자"] ) {
         results.push({
           filename,
           success: false,
-          error: "작성자 또는 현장명 누락",
+          error: "작성자 누락",
         });
         continue;
       }
