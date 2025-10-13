@@ -91,6 +91,8 @@ export default function LoginPage() {
             fontSize: "15px",
             marginBottom: "12px",
             outline: "none",
+            color : "#000",
+            fontWeight : "bold"
           }}
         />
 
@@ -107,6 +109,8 @@ export default function LoginPage() {
             fontSize: "15px",
             marginBottom: "12px",
             outline: "none",
+               color : "#000",
+            fontWeight : "bold"
           }}
         />
 

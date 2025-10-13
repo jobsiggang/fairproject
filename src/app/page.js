@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 export default function HomePage() {
   const router = useRouter();
   const [author, setAuthor] = useState("");
-  const themeColor = "#f0f0f0"; // 🌈 PWA 테마 색상
+  const themeColor = "#f0f0f0"; // 🌈 PWA 테마 색상 (휴대폰 배경과 일치)
 
   useEffect(() => {
     const saved = localStorage.getItem("authorName");
@@ -26,24 +26,22 @@ export default function HomePage() {
     maxWidth: 700,
     margin: "60px auto",
     background: themeColor,
-    borderRadius: 20,
-    boxShadow:
-      "10px 10px 25px rgba(0,0,0,0.15), -10px -10px 25px rgba(255,255,255,0.8)",
+    borderRadius: 16,
     textAlign: "center",
+    color: "#222",
   };
 
   const titleStyle = {
     fontSize: "clamp(28px, 5vw, 38px)",
-    marginBottom: 10,
+    marginBottom: 8,
     color: "#333",
     fontWeight: 800,
-    letterSpacing: "-0.5px",
   };
 
   const descStyle = {
     fontSize: "16px",
     color: "#666",
-    marginBottom: 35,
+    marginBottom: 30,
     fontWeight: 500,
     lineHeight: 1.6,
   };
@@ -59,50 +57,44 @@ export default function HomePage() {
   const mainButtonStyle = {
     width: "70%",
     padding: "10px 0",
-    borderRadius: 12,
-    background: "linear-gradient(145deg, #ffffff, #dcdcdc)",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
     color: "#111",
-    border: "1px solid #c0c0c0",
+    border: "1px solid #bbb",
     fontWeight: 700,
     cursor: "pointer",
     marginBottom: 14,
-    boxShadow:
-      "4px 4px 10px rgba(0,0,0,0.15), -3px -3px 8px rgba(255,255,255,0.7)",
-    transition: "all 0.15s ease-in-out",
     fontSize: 15,
+    transition: "all 0.15s ease-in-out",
   };
 
   const smallButtonStyle = {
     padding: "6px 12px",
     borderRadius: 8,
-    background: "linear-gradient(145deg, #e4e4e4, #f8f8f8)",
+    backgroundColor: "#e8e8e8",
     color: "#333",
     border: "1px solid #ccc",
     cursor: "pointer",
     fontWeight: 600,
     fontSize: 13,
-    boxShadow:
-      "2px 2px 5px rgba(0,0,0,0.1), -2px -2px 5px rgba(255,255,255,0.8)",
     transition: "all 0.15s ease-in-out",
   };
 
   const handleMouseDown = (e) => {
     e.currentTarget.style.transform = "scale(0.97)";
-    e.currentTarget.style.boxShadow = "inset 3px 3px 6px rgba(0,0,0,0.25)";
+    e.currentTarget.style.backgroundColor = "#ddd";
   };
 
   const handleMouseUp = (e) => {
     e.currentTarget.style.transform = "scale(1)";
-    e.currentTarget.style.boxShadow =
-      "4px 4px 10px rgba(0,0,0,0.15), -3px -3px 8px rgba(255,255,255,0.7)";
+    e.currentTarget.style.backgroundColor =
+      e.currentTarget === document.activeElement ? "#ddd" : "#fff";
   };
 
   return (
     <div style={containerStyle}>
       <h1 style={titleStyle}>🏗️ 공정한 Works</h1>
-      <p style={descStyle}>
-        🏘️ 현장 사진 업로드와 기록 관리를 쉽고 빠르게!
-      </p>
+      <p style={descStyle}>🏘️ 현장 사진 업로드와 기록 관리를 쉽고 빠르게!</p>
 
       {author ? (
         <>
