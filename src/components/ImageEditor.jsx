@@ -10,11 +10,10 @@ import toast from "react-hot-toast";
 import { createCompositeImage } from "@/lib/createComposite";
 import { canvasConfig } from "@/lib/compositeConfig";
 
-
 export default function ImageEditor({ author }) {
   const router = useRouter();
   const canvasWidth = canvasConfig.width;
-  const canvasHeight =  canvasConfig.height;
+  const canvasHeight = canvasConfig.height;
 
   const [siteData, setSiteData] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -34,7 +33,6 @@ export default function ImageEditor({ author }) {
     cursor: "pointer",
     borderRadius: 6,
     fontWeight: "bold",
-    // border: "2px solid #222",
     background: "#ffcc00",
     transition: "0.2s",
     flex: "1 1 auto",
@@ -175,9 +173,9 @@ export default function ImageEditor({ author }) {
       }
     }
 
-  // ✅ 업로드 완료 후
-setUploading(false);
-setUploadProgress(100);
+    // ✅ 업로드 완료 후
+    setUploading(false);
+    setUploadProgress(100);
     toast.success("✅ 모든 이미지 업로드 완료!");
 
     // ✅ 업로드 완료 후 images만 초기화, 나머지 상태 유지
@@ -214,159 +212,159 @@ setUploadProgress(100);
   };
 
   return (
-    <div style={{ padding: 16, backgroundColor: "#f7f7f7", minHeight: "100vh", fontFamily: "돋움" }}>
-      {/* 제목 + 로그아웃 */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 20, margin: 0 }}>🏗️ 공정한 Works 💞 {author}</h2>
-        <button
-          onClick={() => {
-            localStorage.removeItem("authorName");
-            router.push("/");
-          }}
-          style={{ background: "#ddd", color: "#000" }}
-        >
-          로그아웃
-        </button>
-      </div>
-
-      {/* 양식 선택 + 가져오기 */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-        <select
-  value={selectedForm}
-  onChange={(e) => setSelectedForm(e.target.value)}
-  style={{
-    color: "#000",
-    flex: "1 1 200px",
-    height: 32,
-    borderRadius: 8,
-    background: "#ffcc00",
-    fontWeight: "bold",
-    fontSize: 13, // ✅ 글자 크기 조절 부분
-  }}
->
-          <option value="">--입력 양식 선택--</option>
-          {formList.map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
-          ))}
-        </select>
-        <button onClick={handleLoadForm} style={buttonStyle}>
-          양식 가져오기
-        </button>
-      </div>
-
-      {/* 입력 폼 */}
-      <InputForm entries={entries} setEntries={setEntries} siteData={siteData} />
-
-      {/* 진행률 바 */}
-      {uploading && (
-        <div style={{ width: "100%", background: "#ddd", height: 20, marginTop: 10, borderRadius: 4, position: "relative" }}>
-          <div
-            style={{
-              width: `${uploadProgress}%`,
-              height: "100%",
-              background: "#007bff",
-              transition: "width 0.3s",
-              borderRadius: 4,
+    <div style={{ padding: 16, backgroundColor: "#f7f7f7", minHeight: "100vh", fontFamily: "돋움", display: "flex", justifyContent: "center" }}>
+      <div style={{ width: "90%", maxWidth: 900 }}>
+        {/* 제목 + 로그아웃 */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15, flexWrap: "wrap", gap: 8 }}>
+          <h2 style={{ fontSize: 20, margin: 0,fontWeight:"bold" }}>🏗️ 공정한 Works 💞 {author}</h2>
+          <button
+            onClick={() => {
+              localStorage.removeItem("authorName");
+              router.push("/");
             }}
-          />
-          <span
+            style={{ background: "#ddd", color: "#000" }}
+          >
+            로그아웃
+          </button>
+        </div>
+
+        {/* 양식 선택 + 가져오기 */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+          <select
+            value={selectedForm}
+            onChange={(e) => setSelectedForm(e.target.value)}
             style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%, -50%)",
+              color: "#000",
+              flex: "1 1 200px",
+              height: 32,
+              borderRadius: 8,
+              background: "#ffcc00",
               fontWeight: "bold",
-              color: "#fff",
-              fontSize: 12,
+              fontSize: 13, // 글자 크기 조정
             }}
           >
-            {uploadProgress}%
-          </span>
+            <option value="">--입력 양식 선택--</option>
+            {formList.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
+          <button onClick={handleLoadForm} style={buttonStyle}>
+            가져오기
+          </button>
         </div>
-      )}
 
-      {/* 📸 사진 버튼 */}
-      <div style={{ marginTop: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <input id="cameraInput" type="file" accept="image/*" capture="environment" multiple onChange={handleFileSelect} style={{ display: "none" }} />
-        <button disabled={uploading || saving} onClick={() => document.getElementById("cameraInput").click()} style={buttonStyle}>📸 사진 찍기</button>
+        {/* 입력 폼 */}
+        <InputForm entries={entries} setEntries={setEntries} siteData={siteData} />
 
-        <input id="galleryInput" type="file" accept="image/*" multiple onChange={handleFileSelect} style={{ display: "none" }} />
-        <button disabled={uploading || saving} onClick={() => document.getElementById("galleryInput").click()} style={buttonStyle}>🖼️ 사진 선택</button>
+        {/* 진행률 바 */}
+        {uploading && (
+          <div style={{ width: "100%", background: "#ddd", height: 20, marginTop: 10, borderRadius: 4, position: "relative" }}>
+            <div
+              style={{
+                width: `${uploadProgress}%`,
+                height: "100%",
+                background: "#007bff",
+                transition: "width 0.3s",
+                borderRadius: 4,
+              }}
+            />
+            <span
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                fontWeight: "bold",
+                color: "#fff",
+                fontSize: 12,
+              }}
+            >
+              {uploadProgress}%
+            </span>
+          </div>
+        )}
 
-        <button disabled={uploading || saving} onClick={handleUpload} style={buttonStyle}>{uploading ? "전송 중..." : "🚀 사진 전송"}</button>
+        {/* 📸 사진 버튼 */}
+        <div style={{ marginTop: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input id="cameraInput" type="file" accept="image/*" capture="environment" multiple onChange={handleFileSelect} style={{ display: "none" }} />
+          <button disabled={uploading || saving} onClick={() => document.getElementById("cameraInput").click()} style={buttonStyle}>📸 사진 찍기</button>
+
+          <input id="galleryInput" type="file" accept="image/*" multiple onChange={handleFileSelect} style={{ display: "none" }} />
+          <button disabled={uploading || saving} onClick={() => document.getElementById("galleryInput").click()} style={buttonStyle}>🖼️ 사진 선택</button>
+
+          <button disabled={uploading || saving} onClick={handleUpload} style={buttonStyle}>{uploading ? "전송 중..." : "🚀 사진 전송"}</button>
+        </div>
+
+        {/* 썸네일 + 미리보기 */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          {images.map((img, i) => (
+            <div key={i} style={{ position: "relative" }}>
+              <img
+                src={img.url}
+                alt={`thumb-${i}`}
+                onClick={() => setPreviewIndex(i)}
+                style={{
+                  width: 80,
+                  height: 80,
+                  objectFit: "cover",
+                  border: previewIndex === i ? "3px solid #007bff" : "2px solid #222",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                }}
+              />
+              <button
+                onClick={() => handleDelete(i)}
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  background: "#ff4d4f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 20,
+                  height: 20,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* 미리보기 + 회전 버튼 */}
+        {images[previewIndex] && (
+          <div style={{ position: "relative", marginTop: 10 }}>
+            <ImageCanvas
+              image={images[previewIndex].file}
+              rotation={images[previewIndex].rotation}
+              entries={entries}
+              canvasWidth={canvasWidth}
+              canvasHeight={canvasHeight}
+            />
+            <button
+              onClick={() => handleRotate(previewIndex)}
+              style={{
+                position: "absolute",
+                bottom: 8,
+                right: 8,
+                width: 28,
+                height: 28,
+                borderRadius: 4,
+                fontWeight: "bold",
+                cursor: "pointer",
+                background: "#007bff",
+                color: "#fff",
+                border: "none",
+              }}
+            >↻</button>
+          </div>
+        )}
       </div>
-
-      {/* 썸네일 + 미리보기 */}
-<div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-  {images.map((img, i) => (
-    <div key={i} style={{ position: "relative" }}>
-      <img
-        src={img.url} // ❌ 섬네일은 회전 적용 X
-        alt={`thumb-${i}`}
-        onClick={() => setPreviewIndex(i)}
-        style={{
-          width: 80,
-          height: 80,
-          objectFit: "cover",
-          border: previewIndex === i ? "3px solid #007bff" : "2px solid #222",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-      />
-      {/* 삭제 버튼: 섬네일 안 */}
-      <button
-        onClick={() => handleDelete(i)}
-        style={{
-          position: "absolute",
-          top: -4,
-          right: -4,
-          background: "#ff4d4f",
-          color: "#fff",
-          border: "none",
-          borderRadius: "50%",
-          width: 20,
-          height: 20,
-          fontWeight: "bold",
-          cursor: "pointer",
-        }}
-      >
-        ×
-      </button>
-    </div>
-  ))}
-</div>
-
-
- {/* 미리보기 + 회전 버튼 */}
-      {images[previewIndex] && (
-        <div style={{ position: "relative", marginTop: 10 }}>
-          <ImageCanvas
-            image={images[previewIndex].file}
-            rotation={images[previewIndex].rotation}
-            entries={entries}
-            canvasWidth={canvasWidth}
-            canvasHeight={canvasHeight}
-          />
-          <button
-            onClick={() => handleRotate(previewIndex)}
-            style={{
-              position: "absolute",
-              bottom: 8,
-              right: 8,
-              width: 28,
-              height: 28,
-              borderRadius: 4,
-              fontWeight: "bold",
-              cursor: "pointer",
-              background: "#007bff",
-              color: "#fff",
-              border: "none",
-            }}
-          >↻</button>
-        </div>
-      )}
     </div>
   );
 }

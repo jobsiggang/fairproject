@@ -68,7 +68,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
             <input
               style={{
                 ...baseInputStyle,
-                width: "8ch",
+                width: "10ch",
                 textAlign: "right",
                 flexShrink: 0,
               }}
@@ -82,7 +82,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
                 type="date"
                 style={{
                   ...baseInputStyle,
-                  width: "15ch",
+                  width: "20ch",
                   fontWeight: "normal",
                 }}
                 value={entry.value}
@@ -92,7 +92,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
               <input
                 style={{
                   ...baseInputStyle,
-                  width: "15ch",
+                  width: "20ch",
                   fontWeight: "normal",
                 }}
                 value={entry.value}
@@ -106,7 +106,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
                   list={`datalist-${entry.key}`}
                   style={{
                     ...baseInputStyle,
-                    width: "15ch",
+                    width: "20ch",
                     fontWeight: "normal",
                   }}
                   value={entry.value}
@@ -123,7 +123,7 @@ export default function InputForm({ entries, setEntries, siteData }) {
               <input
                 style={{
                   ...baseInputStyle,
-                  width: "15ch",
+                  width: "20ch",
                   fontWeight: "normal",
                 }}
                 value={entry.value}
