@@ -23,7 +23,7 @@ export default function LoginPage() {
     if (data.success) {
       localStorage.setItem("authorName", username);
       localStorage.setItem("userRole", data.role); // 관리자 or 일반사용자
-      console.log("🚀 로그인 성공:", { username, role: data.role });
+      // console.log("🚀 로그인 성공:", { username, role: data.role });
       router.push("/upload");
     } else {
       setError(data.message || "로그인 실패");
@@ -73,7 +73,7 @@ export default function LoginPage() {
     fontSize: "16px",
     fontWeight: 600,
     boxShadow: "2px 2px 5px rgba(0,0,0,0.2)",
-    width: "100%",
+    width: "80%",
     transition: "0.2s",
   };
 

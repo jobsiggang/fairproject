@@ -6,7 +6,7 @@ export const metadata = {
   description: "공정한 Works 현장 관리 앱",
 };
 
-export const themeColor = "#ffcc00";
+export const themeColor = "#f0f0f0"; // PWA 테마 색상
 
 export const viewport = {
   width: 'device-width',
