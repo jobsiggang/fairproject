@@ -155,23 +155,30 @@ export default function ImageEditor({ author }) {
     entries.forEach((e) => (entryData[e.field] = e.value));
     entryData["작성자"] = author;
 
-    for (let i = 0; i < images.length; i++) {
-      const { file, rotation } = images[i];
-      try {
-        const canvas = await createCompositeImage(file, entries, rotation);
-        const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
-        const filename = Object.values(entryData).filter(Boolean).join("_") + "_" + file.name;
+  for (let i = 0; i < images.length; i++) {
+  const { file, rotation } = images[i];
+  try {
+    const canvas = await createCompositeImage(file, entries, rotation);
+    const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
+    const filename = Object.values(entryData).filter(Boolean).join("_") + "_" + file.name;
 
-        const res = await uploadPhoto(base64, filename, entryData);
-        if (!res.success) throw new Error(res.error || "업로드 실패");
+    const res = await uploadPhoto(base64, filename, entryData);
+    if (!res.success) throw new Error(res.error || "업로드 실패");
 
-        setUploadProgress(Math.round(((i + 1) / images.length) * 100));
-      } catch (err) {
-        toast.error(`❌ 업로드 실패: ${err.message}`);
-        setUploading(false);
-        return;
-      }
+    const progress = Math.round(((i + 1) / images.length) * 100);
+    setUploadProgress(progress);
+
+    // 마지막 이미지 업로드 완료 시 toast 실행
+    if (i === images.length - 1) {
+      setUploading(false);
+      toast.success("✅ 모든 이미지 업로드 완료!");
     }
+  } catch (err) {
+    toast.error(`❌ 업로드 실패: ${err.message}`);
+    setUploading(false);
+    return;
+  }
+}
 
     // ✅ 업로드 완료 후
     setUploading(false);
@@ -352,8 +359,8 @@ export default function ImageEditor({ author }) {
                 position: "absolute",
                 bottom: 8,
                 right: 8,
-                width: 28,
-                height: 28,
+                width: 36,
+                height: 36,
                 borderRadius: 4,
                 fontWeight: "bold",
                 cursor: "pointer",
