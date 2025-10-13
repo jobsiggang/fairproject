@@ -2,6 +2,7 @@
 export const canvasConfig = {
   width: 1200,
   height: 1000,
+  imageFit: "cover", // 'cover'로 설정하면 회전 후에도 캔버스 비율에 맞춰 확대/축소됨
   table: {
     widthRatio: 1/3,
     heightRatio: 2/7,

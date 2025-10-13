@@ -1,9 +1,10 @@
+// ImageCanvas.jsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { createCompositeImage } from "@/lib/createComposite";
 
-export default function ImageCanvas({ image, entries, canvasWidth = 1200, canvasHeight = 1000 }) {
+export default function ImageCanvas({ image, entries, rotation = 0, canvasWidth = 1200, canvasHeight = 1000 }) {
   const canvasRef = useRef(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,22 +14,17 @@ export default function ImageCanvas({ image, entries, canvasWidth = 1200, canvas
     setLoading(true);
     let isMounted = true;
 
-    // 미리보기용 캔버스 생성
     const drawPreview = async () => {
       try {
-        const canvas = await createCompositeImage(image, entries);
+        const canvas = await createCompositeImage(image, entries, rotation);
         if (!isMounted) return;
 
         const previewCanvas = canvasRef.current;
         const ctx = previewCanvas.getContext("2d");
-
-        // 캔버스 크기 맞춤
         previewCanvas.width = canvas.width;
         previewCanvas.height = canvas.height;
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(canvas, 0, 0);
-
       } catch (err) {
         console.error("미리보기 생성 오류:", err);
       } finally {
@@ -38,13 +34,11 @@ export default function ImageCanvas({ image, entries, canvasWidth = 1200, canvas
 
     drawPreview();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [image, entries]);
+    return () => { isMounted = false; };
+  }, [image, entries, rotation]);
 
   return (
-    <div style={{ marginTop: 20 }}>
+    <div style={{ marginTop: 10 }}>
       {loading && <div style={{ fontSize: 14, color: "#555" }}>미리보기 생성 중...</div>}
       <canvas ref={canvasRef} style={{ width: "100%", border: "2px solid #222", borderRadius: 8 }} />
     </div>

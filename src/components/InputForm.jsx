@@ -31,30 +31,26 @@ export default function InputForm({ entries, setEntries, siteData }) {
     );
   };
 
-  const fieldInputStyle = {
-    width: "8ch",
-    padding: "2px",
-    borderRadius: "4px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-    marginRight: "4px",
+  // 기본 입력 스타일 (필드용 / 값용)
+  const baseInputStyle = {
+    padding: "2px 4px",
+    border: "none",
+    borderBottom: "1px solid #ccc",
+    fontSize: "13px",
     color: "#000",
-    fontWeight: "bold",
-  };
-
-  const valueInputStyle = {
-    width: "16ch",
-    padding: "2px",
-    borderRadius: "4px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-    flexShrink: 0,
-    color: "#000",
+    background: "transparent",
     fontWeight: "bold",
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2, // 행 간격 최소화
+        marginBottom: 6,
+      }}
+    >
       {entries.map((entry) => {
         const options = siteData.map((d) => d[entry.field]).filter(Boolean);
         const hasOptions = options.length > 0;
@@ -64,30 +60,41 @@ export default function InputForm({ entries, setEntries, siteData }) {
             key={entry.key}
             style={{
               display: "flex",
-              flexWrap: "wrap",
               alignItems: "center",
-              border: "1px solid #ccc",
-              borderRadius: 6,
-              padding: 4,
-              backgroundColor: "#fff",
+              gap: 4,
             }}
           >
+            {/* 필드명 */}
             <input
-              style={fieldInputStyle}
+              style={{
+                ...baseInputStyle,
+                width: "8ch",
+                textAlign: "right",
+                flexShrink: 0,
+              }}
               value={entry.field}
               readOnly
             />
 
+            {/* 값 입력 */}
             {entry.field === "일자" ? (
               <input
                 type="date"
-                style={valueInputStyle}
-                value={entry.value} // 양식 가져오기 시 이미 value에 today가 들어감
+                style={{
+                  ...baseInputStyle,
+                  width: "15ch",
+                  fontWeight: "normal",
+                }}
+                value={entry.value}
                 onChange={(e) => handleValueChange(entry.key, e.target.value)}
               />
             ) : entry.field === "위치" ? (
               <input
-                style={valueInputStyle}
+                style={{
+                  ...baseInputStyle,
+                  width: "15ch",
+                  fontWeight: "normal",
+                }}
                 value={entry.value}
                 placeholder="123-345"
                 onChange={(e) => handleValueChange(entry.key, e.target.value)}
@@ -97,7 +104,11 @@ export default function InputForm({ entries, setEntries, siteData }) {
               <>
                 <input
                   list={`datalist-${entry.key}`}
-                  style={valueInputStyle}
+                  style={{
+                    ...baseInputStyle,
+                    width: "15ch",
+                    fontWeight: "normal",
+                  }}
                   value={entry.value}
                   onChange={(e) => handleValueChange(entry.key, e.target.value)}
                   onBlur={() => handleValueBlur(entry.key)}
@@ -110,7 +121,11 @@ export default function InputForm({ entries, setEntries, siteData }) {
               </>
             ) : (
               <input
-                style={valueInputStyle}
+                style={{
+                  ...baseInputStyle,
+                  width: "15ch",
+                  fontWeight: "normal",
+                }}
                 value={entry.value}
                 placeholder={entry.field}
                 onChange={(e) => handleValueChange(entry.key, e.target.value)}
