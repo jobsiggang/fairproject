@@ -22,76 +22,60 @@ export default function LoginPage() {
 
     if (data.success) {
       localStorage.setItem("authorName", username);
-      localStorage.setItem("userRole", data.role); // 관리자 or 일반사용자
-      // console.log("🚀 로그인 성공:", { username, role: data.role });
+      localStorage.setItem("userRole", data.role);
       router.push("/upload");
     } else {
       setError(data.message || "로그인 실패");
     }
   };
 
-  const containerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-    padding: "20px",
-    fontFamily: "돋움",
-    backgroundColor: "#f0f0f0",
-  };
-
-  const cardStyle = {
-    width: "100%",
-    maxWidth: "400px",
-    backgroundColor: "#fff",
-    borderRadius: "12px",
-    boxShadow: "2px 2px 10px rgba(0,0,0,0.1)",
-    padding: "30px 20px",
-    textAlign: "center",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    padding: "10px",
-    marginBottom: "12px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    fontSize: "16px",
-    color: "#000",
-    outline: "none",
-    fontWeight: "bold",
-  };
-
-  const buttonStyle = {
-    background: "linear-gradient(145deg, #f5f5f5, #dcdcdc)",
-    color: "#333",
-    border: "1px solid #ccc",
-    borderRadius: "25px",
-    padding: "12px 24px",
-    cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: 600,
-    boxShadow: "2px 2px 5px rgba(0,0,0,0.2)",
-    width: "80%",
-    transition: "0.2s",
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={cardStyle}>
-        <h1 style={{ fontSize: "24px", marginBottom: "16px", color: "#333" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f8f9fa",
+        fontFamily: "Pretendard, sans-serif",
+        padding: "20px",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+          background: "#fff",
+          borderRadius: "16px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+          padding: "32px 24px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "24px",
+            fontWeight: 700,
+            marginBottom: "12px",
+            color: "#222",
+          }}
+        >
           로그인
         </h1>
         <p
           style={{
-            fontSize: "16px",
+            fontSize: "15px",
             color: "#555",
-            marginBottom: "20px",
+            textAlign: "center",
             lineHeight: 1.5,
+            marginBottom: "24px",
           }}
         >
-          시스템을 사용하려면 로그인 후, 사진 업로드 및 편집 페이지로 이동하세요.
+          시스템 사용을 위해 로그인 후
+          <br />
+          사진 업로드페이지로 이동하세요.
         </p>
 
         <input
@@ -99,28 +83,59 @@ export default function LoginPage() {
           placeholder="사용자명"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          style={inputStyle}
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: "10px",
+            border: "1px solid #ddd",
+            fontSize: "15px",
+            marginBottom: "12px",
+            outline: "none",
+          }}
         />
+
         <input
           type="password"
           placeholder="비밀번호"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={inputStyle}
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: "10px",
+            border: "1px solid #ddd",
+            fontSize: "15px",
+            marginBottom: "12px",
+            outline: "none",
+          }}
         />
 
         {error && (
-          <p style={{ color: "red", marginBottom: "1rem" }}>{error}</p>
+          <p style={{ color: "#e63946", fontSize: "14px", marginBottom: "10px" }}>
+            {error}
+          </p>
         )}
 
         <button
           onClick={handleLogin}
-          style={buttonStyle}
+          style={{
+            width: "100%",
+            background: "linear-gradient(135deg, #007bff, #3399ff)",
+            color: "#fff",
+            border: "none",
+            borderRadius: "10px",
+            padding: "10px",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.2s",
+            boxShadow: "0 3px 6px rgba(0,0,0,0.1)",
+          }}
           onMouseOver={(e) =>
-            (e.currentTarget.style.boxShadow = "4px 4px 10px rgba(0,0,0,0.3)")
+            (e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.15)")
           }
           onMouseOut={(e) =>
-            (e.currentTarget.style.boxShadow = "2px 2px 5px rgba(0,0,0,0.2)")
+            (e.currentTarget.style.boxShadow = "0 3px 6px rgba(0,0,0,0.1)")
           }
         >
           로그인

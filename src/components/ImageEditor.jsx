@@ -144,54 +144,56 @@ export default function ImageEditor({ author }) {
   };
 
   // 🚀 업로드
-  const handleUpload = async () => {
-    if (!allRequiredFilled()) return;
-    if (!images.length) return toast.error("❌ 이미지를 선택하세요.");
+ const handleUpload = async () => {
+  if (!allRequiredFilled()) return;
+  if (!images.length) return toast.error("❌ 이미지를 선택하세요.");
 
-    setUploading(true);
-    setUploadProgress(0);
+  setUploading(true);
+  setUploadProgress(0);
 
-    const entryData = {};
-    entries.forEach((e) => (entryData[e.field] = e.value));
-    entryData["작성자"] = author;
+  const entryData = {};
+  entries.forEach((e) => (entryData[e.field] = e.value));
+  entryData["작성자"] = author;
 
   for (let i = 0; i < images.length; i++) {
-  const { file, rotation } = images[i];
-  try {
-    const canvas = await createCompositeImage(file, entries, rotation);
-    const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
-    const filename = Object.values(entryData).filter(Boolean).join("_") + "_" + file.name;
+    const { file, rotation } = images[i];
+    try {
+      const canvas = await createCompositeImage(file, entries, rotation);
+      const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
+      const filename =
+        Object.values(entryData).filter(Boolean).join("_") + "_" + file.name;
 
-    const res = await uploadPhoto(base64, filename, entryData);
-    if (!res.success) throw new Error(res.error || "업로드 실패");
+      const res = await uploadPhoto(base64, filename, entryData);
+      if (!res.success) throw new Error(res.error || "업로드 실패");
 
-    const progress = Math.round(((i + 1) / images.length) * 100);
-    setUploadProgress(progress);
+      // 진행률 업데이트
+      const progress = Math.round(((i + 1) / images.length) * 100);
+      setUploadProgress(progress);
 
-    // 마지막 이미지 업로드 완료 시 toast 실행
-    if (i === images.length - 1) {
+      // 마지막 이미지 업로드 완료 시
+      if (i === images.length - 1) {
+        // 1️⃣ 진행바가 실제로 100% 표시될 때까지 잠시 대기 (UI 반영 보장)
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        setUploading(false);
+
+        // 2️⃣ 업로드 완료 후 휴대폰 저장 여부 확인
+        const saveConfirm = confirm(
+          "✅ 업로드 완료!\n보드 사진을 휴대폰에 저장하시겠습니까?"
+        );
+        if (saveConfirm) handleSaveComposite();
+      }
+    } catch (err) {
+      toast.error(`❌ 업로드 실패: ${err.message}`);
       setUploading(false);
-      toast.success("✅ 모든 이미지 업로드 완료!");
+      return;
     }
-  } catch (err) {
-    toast.error(`❌ 업로드 실패: ${err.message}`);
-    setUploading(false);
-    return;
   }
-}
 
-    // ✅ 업로드 완료 후
-    setUploading(false);
-    setUploadProgress(100);
-    toast.success("✅ 모든 이미지 업로드 완료!");
+  // ✅ 업로드 완료 후 이미지 목록만 초기화 (폼 값 등 유지)
+  setImages([]);
+};
 
-    // ✅ 업로드 완료 후 images만 초기화, 나머지 상태 유지
-    setImages([]);
-
-    // 📲 합성 이미지 저장 확인
-    const saveConfirm = confirm("📸 합성 이미지를 휴대폰에 저장하시겠습니까?");
-    if (saveConfirm) handleSaveComposite();
-  };
 
   // 💾 휴대폰 저장 (회전값 적용)
   const handleSaveComposite = async () => {
@@ -219,11 +221,11 @@ export default function ImageEditor({ author }) {
   };
 
   return (
-    <div style={{ padding: 16, backgroundColor: "#f7f7f7", minHeight: "100vh", fontFamily: "돋움", display: "flex", justifyContent: "center" }}>
+    <div style={{ padding: 16, backgroundColor: "#f0f0f0", minHeight: "100vh", fontFamily: "돋움", display: "flex", justifyContent: "center" }}>
       <div style={{ width: "90%", maxWidth: 900 }}>
         {/* 제목 + 로그아웃 */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15, flexWrap: "wrap", gap: 8 }}>
-          <h2 style={{ fontSize: 20, margin: 0,fontWeight:"bold" }}>🏗️ 공정한 Works 💞 {author}</h2>
+          <h2 style={{ fontSize: 20, margin: 0,fontWeight:"bold",color:"#007bff" }}>🏗️ 공정한 Works 💞 {author}</h2>
           <button
             onClick={() => {
               localStorage.removeItem("authorName");
