@@ -1,0 +1,8 @@
+{
+  "tailwindCSS.includeLanguages": {
+    "css": "css",
+    "postcss": "css",
+    "typescript": "javascript"
+  },
+  "css.validate": false
+}

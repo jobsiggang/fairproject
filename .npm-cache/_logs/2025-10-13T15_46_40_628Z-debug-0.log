@@ -5,9 +5,10 @@
 4 silly config:load:file:D:\fairproject\fair_app\.npmrc
 5 silly config:load:file:C:\Users\jjcha\.npmrc
 6 silly config:load:file:C:\Users\jjcha\AppData\Roaming\npm\etc\npmrc
-7 verbose title npm run dev
-8 verbose argv "run" "dev"
-9 verbose logfile logs-max:10 dir:D:\fairproject\fair_app\.npm-cache\_logs\2025-10-12T03_07_08_214Z-
-10 verbose logfile D:\fairproject\fair_app\.npm-cache\_logs\2025-10-12T03_07_08_214Z-debug-0.log
+7 verbose title npm rn dev
+8 verbose argv "rn" "dev"
+9 verbose logfile logs-max:10 dir:D:\fairproject\fair_app\.npm-cache\_logs\2025-10-13T15_46_40_628Z-
+10 verbose logfile D:\fairproject\fair_app\.npm-cache\_logs\2025-10-13T15_46_40_628Z-debug-0.log
 11 silly logfile start cleaning logs, removing 1 files
-12 silly logfile done cleaning log files
+12 verbose exit 1
+13 verbose code 1
