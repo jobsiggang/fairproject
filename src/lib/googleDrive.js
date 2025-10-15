@@ -1,3 +1,18 @@
+// ...existing code...
+export async function uploadPhotosBatch(uploadList) {
+  try {
+    const res = await fetch("/api/uploadPhoto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(uploadList),
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+// ...existing code...
 export async function uploadPhoto(base64, filename, entryData) {
   try {
     const res = await fetch("/api/uploadPhoto", {

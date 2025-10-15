@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import InputForm from "./InputForm";
 import ImageCanvas from "./ImageCanvas";
 import { fetchSheetData } from "@/lib/googleSheet";
-import { uploadPhoto } from "@/lib/googleDrive";
+import { uploadPhoto, uploadPhotosBatch } from "@/lib/googleDrive";
 import toast from "react-hot-toast";
 import { createCompositeImage } from "@/lib/createComposite";
 import { canvasConfig } from "@/lib/compositeConfig";
@@ -24,6 +24,8 @@ export default function ImageEditor({ author }) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const kstTimeoutRef = useRef(null);
+  const kstIntervalRef = useRef(null);
 
   // 🎨 공통 버튼 스타일
   const buttonStyle = {
@@ -67,6 +69,37 @@ export default function ImageEditor({ author }) {
     }
   }, []);
 
+  // 한국시간(KST) 자정 자동 로그아웃
+  useEffect(() => {
+    const doLogout = () => {
+      try {
+        localStorage.removeItem("authorName");
+      } catch (e) {}
+      toast.success("자동 로그아웃: 한국시간 자정이 되어 로그아웃됩니다.");
+      router.push("/");
+    };
+
+    const now = new Date();
+    const nowUtcMs = now.getTime();
+    const nextKstMidUtc = new Date();
+    nextKstMidUtc.setUTCHours(15, 0, 0, 0);
+    if (nextKstMidUtc.getTime() <= nowUtcMs) {
+      nextKstMidUtc.setUTCDate(nextKstMidUtc.getUTCDate() + 1);
+    }
+    const delay = nextKstMidUtc.getTime() - nowUtcMs;
+
+    kstTimeoutRef.current = setTimeout(() => {
+      doLogout();
+      // 이후 매일 실행
+      kstIntervalRef.current = setInterval(doLogout, 24 * 60 * 60 * 1000);
+    }, delay);
+
+    return () => {
+      if (kstTimeoutRef.current) clearTimeout(kstTimeoutRef.current);
+      if (kstIntervalRef.current) clearInterval(kstIntervalRef.current);
+    };
+  }, []);
+
   const handleLoadForm = async () => {
     if (!selectedForm) return;
     const allForms = await fetchSheetData("입력양식");
@@ -108,21 +141,28 @@ export default function ImageEditor({ author }) {
       rotation: 0,
     }));
 
-    setImages((prev) => [...prev, ...newImages]);
-    setPreviewIndex(images.length);
+    // set preview index based on previous length to avoid stale state
+    setImages((prev) => {
+      const startIndex = prev.length;
+      setPreviewIndex(startIndex);
+      return [...prev, ...newImages];
+    });
   };
 
   const allRequiredFilled = () => {
-    if (entries.length === 0) {
-      toast.error("❌ 입력 양식을 선택하세요.");
+    if (!entries || entries.length === 0) {
+      toast.error("❌ 항목이 없습니다. 양식을 불러오거나 항목을 추가하세요.");
       return false;
     }
+
     for (const e of entries) {
-      if (!e.value || e.value.trim() === "") {
-        toast.error("❌ 모든 입력 필드는 필수입니다.");
+      const v = e.value;
+      if (v === undefined || v === null || String(v).trim() === "") {
+        toast.error("❌ 모든 항목을 입력해주세요.");
         return false;
       }
     }
+
     return true;
   };
 
@@ -143,57 +183,78 @@ export default function ImageEditor({ author }) {
     );
   };
 
-  // 🚀 업로드
- const handleUpload = async () => {
-  if (!allRequiredFilled()) return;
-  if (!images.length) return toast.error("❌ 이미지를 선택하세요.");
+  // 🚀 업로드 — 사용자 체크 제거, 최적화 유지 (병렬 합성 + 다운스케일 + 배치 업로드)
+  const handleUpload = async () => {
+    if (!allRequiredFilled()) return;
+    if (!images.length) return toast.error("❌ 이미지를 선택하세요.");
 
-  setUploading(true);
-  setUploadProgress(0);
+    setUploading(true);
+    setUploadProgress(0);
 
-  const entryData = {};
-  entries.forEach((e) => (entryData[e.field] = e.value));
-  entryData["작성자"] = author;
+    const entryData = {};
+    entries.forEach((e) => (entryData[e.field] = e.value));
+    entryData["작성자"] = author;
 
-  for (let i = 0; i < images.length; i++) {
-    const { file, rotation } = images[i];
-    try {
+    // 이미지 합성 후 최소화된 base64 객체 만들기
+    const processImage = async (file, rotation) => {
       const canvas = await createCompositeImage(file, entries, rotation);
-      const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
-      const filename =
-        Object.values(entryData).filter(Boolean).join("_") + "_" + file.name;
 
-      const res = await uploadPhoto(base64, filename, entryData);
+      // 다운스케일(선택): 최대 길이 제한 (예: 1600px)
+      const MAX_DIM = 1600;
+      let outCanvas = canvas;
+      if (canvas.width > MAX_DIM || canvas.height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / canvas.width, MAX_DIM / canvas.height);
+        const tmp = document.createElement("canvas");
+        tmp.width = Math.round(canvas.width * ratio);
+        tmp.height = Math.round(canvas.height * ratio);
+        tmp.getContext("2d").drawImage(canvas, 0, 0, tmp.width, tmp.height);
+        outCanvas = tmp;
+      }
+
+      // 압축: JPEG 품질을 0.75 권장
+      const base64 = outCanvas.toDataURL("image/jpeg", 0.75).split(",")[1];
+      const filename = Object.values(entryData).filter(Boolean).join("_") + "_" + file.name;
+      return { base64, filename, entryData };
+    };
+
+    // 동시성 제한자로 합성/압축을 병렬 수행 (메인 스레드 부담 고려)
+    const concurrency = 2;
+    const queue = images.map((img) => ({ file: img.file, rotation: img.rotation }));
+    const processed = new Array(queue.length);
+    let idx = 0;
+
+    const worker = async () => {
+      while (true) {
+        const i = idx++;
+        if (i >= queue.length) return;
+        const it = queue[i];
+        processed[i] = await processImage(it.file, it.rotation);
+        setUploadProgress(Math.round(((i + 1) / queue.length) * 100));
+      }
+    };
+
+    try {
+      await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
+
+      // 서버로 한 번에 배치 전송 (서버가 배열을 지원함: src/app/api/uploadPhoto/route.js)
+      const res = await uploadPhotosBatch(processed);
       if (!res.success) throw new Error(res.error || "업로드 실패");
 
-      // 진행률 업데이트
-      const progress = Math.round(((i + 1) / images.length) * 100);
-      setUploadProgress(progress);
+      setUploadProgress(100);
+      // UI 업데이트 시간 확보
+      await new Promise((r) => setTimeout(r, 300));
+      setUploading(false);
 
-      // 마지막 이미지 업로드 완료 시
-      if (i === images.length - 1) {
-        // 1️⃣ 진행바가 실제로 100% 표시될 때까지 잠시 대기 (UI 반영 보장)
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        setUploading(false);
-
-        // 2️⃣ 업로드 완료 후 휴대폰 저장 여부 확인
-        const saveConfirm = confirm(
-          "✅ 업로드 완료!\n보드 사진을 휴대폰에 저장하시겠습니까?"
-        );
-        if (saveConfirm) handleSaveComposite();
-      }
+      const saveConfirm = confirm("✅ 업로드 완료!\n보드 사진을 휴대폰에 저장하시겠습니까?");
+      if (saveConfirm) handleSaveComposite();
+      setImages([]); // 업로드 후 초기화
+      toast.success("✅ 모든 이미지 업로드 완료!");
     } catch (err) {
-      toast.error(`❌ 업로드 실패: ${err.message}`);
+      toast.error(`❌ 업로드 실패: ${err?.message || err}`);
       setUploading(false);
       return;
     }
-  }
-
-  // ✅ 업로드 완료 후 이미지 목록만 초기화 (폼 값 등 유지)
-  setImages([]);
-};
-
+  };
 
   // 💾 휴대폰 저장 (회전값 적용)
   const handleSaveComposite = async () => {

@@ -1,9 +1,8 @@
 "use client";
-
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import ImageEditor from "@/components/ImageEditor";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+
 
 export default function UploadPage() {
   const [author, setAuthor] = useState("");
