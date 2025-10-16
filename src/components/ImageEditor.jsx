@@ -23,7 +23,9 @@ export default function ImageEditor({ author }) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  // 분리된 진행률: 합성(처리) / 업로드
+  const [processingProgress, setProcessingProgress] = useState(0); // 합성(이미지 처리) 진행률 0-100
+  const [uploadingProgress, setUploadingProgress] = useState(0); // 업로드 진행률 0-100
   const kstTimeoutRef = useRef(null);
   const kstIntervalRef = useRef(null);
 
@@ -183,19 +185,20 @@ export default function ImageEditor({ author }) {
     );
   };
 
-  // 🚀 업로드 — 사용자 체크 제거, 최적화 유지 (병렬 합성 + 다운스케일 + 배치 업로드)
+  // 🚀 업로드 — 합성(처리)과 업로드를 분리하여 각각 진행률을 업데이트
   const handleUpload = async () => {
     if (!allRequiredFilled()) return;
     if (!images.length) return toast.error("❌ 이미지를 선택하세요.");
 
+    // 초기화
     setUploading(true);
-    setUploadProgress(0);
+    setProcessingProgress(0);
+    setUploadingProgress(0);
 
     const entryData = {};
     entries.forEach((e) => (entryData[e.field] = e.value));
     entryData["작성자"] = author;
 
-    // 이미지 합성 후 최소화된 base64 객체 만들기
     const processImage = async (file, rotation) => {
       const canvas = await createCompositeImage(file, entries, rotation);
 
@@ -211,48 +214,54 @@ export default function ImageEditor({ author }) {
         outCanvas = tmp;
       }
 
-      // 압축: JPEG 품질을 0.75 권장
       const base64 = outCanvas.toDataURL("image/jpeg", 0.75).split(",")[1];
       const filename = Object.values(entryData).filter(Boolean).join("_") + "_" + file.name;
       return { base64, filename, entryData };
     };
 
-    // 동시성 제한자로 합성/압축을 병렬 수행 (메인 스레드 부담 고려)
-    const concurrency = 2;
-    const queue = images.map((img) => ({ file: img.file, rotation: img.rotation }));
-    const processed = new Array(queue.length);
-    let idx = 0;
-
-    const worker = async () => {
-      while (true) {
-        const i = idx++;
-        if (i >= queue.length) return;
-        const it = queue[i];
-        processed[i] = await processImage(it.file, it.rotation);
-        setUploadProgress(Math.round(((i + 1) / queue.length) * 100));
-      }
-    };
-
     try {
-      await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
+      // 1) 합성(처리) 단계 — 순차 처리하여 명확한 진행률 제공
+      const processed = [];
+      for (let i = 0; i < images.length; i++) {
+        const { file, rotation } = images[i];
+        processed[i] = await processImage(file, rotation);
+        setProcessingProgress(Math.round(((i + 1) / images.length) * 100));
+      }
 
-      // 서버로 한 번에 배치 전송 (서버가 배열을 지원함: src/app/api/uploadPhoto/route.js)
-      const res = await uploadPhotosBatch(processed);
-      if (!res.success) throw new Error(res.error || "업로드 실패");
+      // 2) 업로드 단계 — 각 파일 업로드 완료 시점에 진행률 갱신
+      // uploadPhoto (단일 업로드)가 있으면 파일별로 호출해서 진행률을 매번 갱신
+      if (typeof uploadPhoto === "function") {
+        for (let i = 0; i < processed.length; i++) {
+          const item = processed[i];
+          const res = await uploadPhoto(item.base64, item.filename, item.entryData);
+          if (!res || !res.success) throw new Error(res?.error || "업로드 실패");
+          setUploadingProgress(Math.round(((i + 1) / processed.length) * 100));
+        }
+      } else if (typeof uploadPhotosBatch === "function") {
+        // 배치 업로드만 지원하는 경우: 호출 전 업로드Progress 0, 호출 후 100
+        const res = await uploadPhotosBatch(processed);
+        if (!res || !res.success) throw new Error(res?.error || "배치 업로드 실패");
+        setUploadingProgress(100);
+      } else {
+        throw new Error("업로드 함수(uploadPhoto 또는 uploadPhotosBatch)가 없습니다.");
+      }
 
-      setUploadProgress(100);
-      // UI 업데이트 시간 확보
+      // 완료 처리
+      setProcessingProgress(100);
+      setUploadingProgress(100);
       await new Promise((r) => setTimeout(r, 300));
       setUploading(false);
 
       const saveConfirm = confirm("✅ 업로드 완료!\n보드 사진을 휴대폰에 저장하시겠습니까?");
       if (saveConfirm) handleSaveComposite();
-      setImages([]); // 업로드 후 초기화
+      setImages([]);
       toast.success("✅ 모든 이미지 업로드 완료!");
     } catch (err) {
+      console.error(err);
       toast.error(`❌ 업로드 실패: ${err?.message || err}`);
       setUploading(false);
-      return;
+      setProcessingProgress(0);
+      setUploadingProgress(0);
     }
   };
 
@@ -330,29 +339,20 @@ export default function ImageEditor({ author }) {
 
         {/* 진행률 바 */}
         {uploading && (
-          <div style={{ width: "100%", background: "#ddd", height: 20, marginTop: 10, borderRadius: 4, position: "relative" }}>
-            <div
-              style={{
-                width: `${uploadProgress}%`,
-                height: "100%",
-                background: "#007bff",
-                transition: "width 0.3s",
-                borderRadius: 4,
-              }}
-            />
-            <span
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                fontWeight: "bold",
-                color: "#fff",
-                fontSize: 12,
-              }}
-            >
-              {uploadProgress}%
-            </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4, color: "#333" }}>합성 중: {processingProgress}%</div>
+              <div style={{ width: "100%", background: "#eee", height: 12, borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ width: `${processingProgress}%`, height: "100%", background: "#007bff", transition: "width 0.25s" }} />
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4, color: "#333" }}>업로드 중: {uploadingProgress}%</div>
+              <div style={{ width: "100%", background: "#eee", height: 12, borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ width: `${uploadingProgress}%`, height: "100%", background: "#00aa66", transition: "width 0.25s" }} />
+              </div>
+            </div>
           </div>
         )}
 

@@ -120,10 +120,13 @@ const InputFormImpl = function InputForm({ entries, setEntries, siteData }, ref)
   const timersRef = useRef({});
 
   const onChangeDebounced = useCallback((key, newValue, delay = 300) => {
-    // clear existing timer
+    // 즉시 UI 반영 (타이핑 지연 제거)
+    setEntries((prev) => prev.map((e) => (e.key === key ? { ...e, value: newValue } : e)));
+
+    // 내부 타이머만 유지 (flushPending/handleBlur 호환성)
     if (timersRef.current[key]?.timer) clearTimeout(timersRef.current[key].timer);
     const timer = setTimeout(() => {
-      setEntries((prev) => prev.map((e) => (e.key === key ? { ...e, value: newValue } : e)));
+      // 타이머 만료시 pending 표시는 제거 (이미 값은 반영되어 있음)
       delete timersRef.current[key];
     }, delay);
     timersRef.current[key] = { timer, value: newValue };
